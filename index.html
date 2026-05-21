@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Daily Post News</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: '#B84A2E',
+          'brand-light': '#FAECE7',
+        },
+        fontFamily: {
+          serif:['ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
+          sans:['ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .nav-scroll::-webkit-scrollbar { height: 0px; }
+  .page { display: none; }
+  .page.visible { display: block; animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .prose p { margin-bottom: 1.5em; font-size: 1.125rem; line-height: 1.8; color: #374151; }
+  .prose p:first-of-type::first-letter { float: left; font-size: 3.5rem; line-height: 0.8; font-weight: bold; padding-right: 0.5rem; color: #B84A2E; font-family: ui-serif, Georgia, serif;}
+  .prose strong, .prose b { color: #111827; }
+  .prose a { color: #B84A2E; text-decoration: underline; }
+  .prose h2, .prose h3 { font-size: 1.5rem; font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; color: #111827; }
+</style>
+</head>
+<body class="bg-white text-gray-900 font-sans antialiased flex flex-col min-h-screen">
+
+<!-- FLOATING ADS -->
+<div id="ad-left" class="fixed left-4 top-[35%] -translate-y-1/2 w-[120px] 2xl:w-[160px] h-[600px] bg-gray-50 border border-gray-200 shadow-sm hidden xl:flex flex-col items-center justify-center z-40 group cursor-pointer hover:bg-gray-100 transition-colors">
+  <span class="text-gray-300 text-xs font-bold uppercase tracking-widest -rotate-90 whitespace-nowrap">Advertisement</span>
+  <button onclick="document.getElementById('ad-left').style.display='none'; event.stopPropagation();" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-xmark"></i></button>
+</div>
+
+<div id="ad-right" class="fixed right-4 top-[35%] -translate-y-1/2 w-[120px] 2xl:w-[160px] h-[600px] bg-gray-50 border border-gray-200 shadow-sm hidden xl:flex flex-col items-center justify-center z-40 group cursor-pointer hover:bg-gray-100 transition-colors">
+  <span class="text-gray-300 text-xs font-bold uppercase tracking-widest rotate-90 whitespace-nowrap">Advertisement</span>
+  <button onclick="document.getElementById('ad-right').style.display='none'; event.stopPropagation();" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-xmark"></i></button>
+</div>
+
+<!-- Reading Progress Bar -->
+<div id="progress-bar" class="fixed top-0 left-0 h-1 bg-brand z-[60] w-0 transition-all duration-150"></div>
+
+<!-- Top Bar -->
+<div class="border-b border-gray-200 bg-gray-50 relative z-50">
+  <div class="max-w-6xl mx-auto px-4 py-2 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 uppercase tracking-wide gap-3">
+    <div class="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
+      <span id="nav-date" class="font-bold text-gray-700"></span>
+      <span class="hidden sm:inline text-gray-300">|</span>
+      <span>Official Site Feed</span>
+    </div>
+    <div class="relative w-full sm:w-80 flex items-center order-3 md:order-2">
+      <i class="fa-solid fa-magnifying-glass absolute left-3 text-gray-400"></i>
+      <input type="text" id="search-input" placeholder="Search archives..." class="w-full pl-8 pr-8 py-1.5 bg-gray-200/60 border border-transparent rounded-full focus:bg-white focus:border-brand outline-none transition-all text-xs">
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="py-6 text-center border-b border-gray-900 sticky top-0 bg-white/95 backdrop-blur-sm z-40 shadow-sm">
+  <div class="max-w-6xl mx-auto px-4 relative">
+    <h1 class="text-4xl md:text-6xl font-bold font-serif cursor-pointer tracking-tight" onclick="clearSearch(); showPage('home');">
+      <span>The<span class="text-brand">Daily</span>Post</span>
+      <span class="bg-brand text-white text-sm md:text-lg font-sans font-bold uppercase tracking-widest px-3 py-1 rounded-md shadow-sm translate-y-[-5px]">News</span>
+    </h1>
+    <nav class="mt-5 nav-scroll overflow-x-auto whitespace-nowrap">
+      <ul id="dynamic-nav" class="flex justify-start md:justify-center space-x-6 text-sm font-semibold uppercase tracking-wider text-gray-700 pb-1">
+        <!-- Links Injected via JS -->
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full relative z-10">
+  <!-- SEARCH PAGE -->
+  <div class="page" id="page-search">
+    <div class="border-b-2 border-gray-900 pb-2 mb-6 flex justify-between items-end">
+      <h2 class="text-2xl font-bold uppercase tracking-wider text-brand" id="search-title">Search Results</h2>
+      <button onclick="clearSearch()" class="text-xs text-gray-500 hover:text-brand font-bold uppercase tracking-wider">Clear <i class="fa-solid fa-xmark ml-1"></i></button>
+    </div>
+    <div id="search-list" class="flex flex-col min-h-[40vh]"></div>
+  </div>
+
+  <!-- HOME PAGE -->
+  <div class="page visible" id="page-home">
+    <div class="flex items-center gap-3 bg-brand text-white px-4 py-2 rounded shadow-sm mb-8 text-sm cursor-pointer hover:bg-[#9d3f26] transition-colors" onclick="if(articles.length > 0) readArticle(articles[0].id)">
+      <span class="bg-white text-brand px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm animate-pulse flex shrink-0">Breaking</span>
+      <span class="truncate font-medium flex-1" id="breaking-text">Establishing connection...</span>
+      <i class="fa-solid fa-arrow-right text-xs"></i>
+    </div>
+
+    <div id="featured-container" class="grid grid-cols-1 md:grid-cols-12 gap-6 border-b border-gray-200 pb-10 mb-10"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div class="lg:col-span-8">
+        <div class="flex justify-between items-end border-b-2 border-gray-900 pb-2 mb-6">
+          <h2 class="text-xl font-bold uppercase tracking-wider flex items-center gap-2"><i class="fa-regular fa-clock text-brand"></i> Latest News</h2>
+          <span class="text-xs text-gray-500 font-bold uppercase tracking-wider" id="latest-count"></span>
+        </div>
+        <div id="latest-list" class="flex flex-col"></div>
+      </div>
+      <div class="lg:col-span-4">
+        <div class="border-b-2 border-gray-900 pb-2 mb-6">
+          <h2 class="text-xl font-bold uppercase tracking-wider flex items-center gap-2"><i class="fa-regular fa-comments text-brand"></i> Opinion</h2>
+        </div>
+        <div id="home-opinions" class="flex flex-col gap-5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORY PAGE -->
+  <div class="page" id="page-category">
+    <div class="border-b-2 border-gray-900 pb-2 mb-6">
+      <h2 class="text-3xl font-bold uppercase tracking-wider" id="cat-title">Category</h2>
+    </div>
+    <div id="category-list" class="flex flex-col min-h-[50vh]"></div>
+  </div>
+
+  <!-- ARTICLE VIEW -->
+  <div class="page" id="page-article">
+    <button class="mb-8 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-gray-500 hover:text-brand transition-colors group" onclick="goBack()">
+      <i class="fa-solid fa-arrow-left transform group-hover:-translate-x-1 transition-transform"></i> Back to headlines
+    </button>
+    <article class="max-w-3xl mx-auto">
+      <span class="text-brand text-sm font-bold uppercase tracking-widest mb-4 block" id="full-cat"></span>
+      <h1 class="text-4xl md:text-5xl font-bold font-serif leading-tight mb-6 text-gray-900" id="full-title"></h1>
+      <div class="flex flex-wrap items-center gap-4 border-t border-b border-gray-200 py-4 mb-8 text-sm text-gray-600">
+        <div class="font-bold text-gray-900 flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500"><i class="fa-solid fa-user text-xs"></i></div>
+          <span id="full-author"></span>
+        </div>
+        <span class="text-gray-300 hidden sm:inline">|</span>
+        <div class="flex items-center gap-2" id="full-date"></div>
+      </div>
+      <div id="full-image-container" class="mb-10 w-full overflow-hidden rounded-lg shadow-md group bg-black"></div>
+      <div class="prose font-serif" id="full-body"></div>
+    </article>
+  </div>
+</main>
+
+<!-- RESTORED ORIGINAL FOOTER -->
+<footer class="bg-slate-900 text-slate-300 pt-16 pb-24 xl:pb-8 border-t-4 border-brand mt-auto relative z-10">
+  <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-10 mb-12">
+    <div class="md:col-span-4">
+      <h2 class="text-3xl font-bold font-serif tracking-tight text-white mb-4">
+        The<span class="text-brand">Daily</span>Post <span class="text-sm font-sans tracking-widest uppercase ml-1">News</span>
+      </h2>
+      <p class="text-sm text-slate-400 leading-relaxed mb-6">
+        Delivering independent, highly credible journalism. We bring you the latest breaking news, deep analytical opinion, and updates from around the globe directly to your screen.
+      </p>
+    </div>
+    <div class="md:col-span-4 md:pl-10">
+      <h3 class="text-white font-bold uppercase tracking-wider mb-4 text-sm">Sections</h3>
+      <ul class="grid grid-cols-2 gap-y-3 text-sm">
+        <li><a href="#" class="hover:text-brand transition-colors" onclick="navTo('World', null, event)">World</a></li>
+        <li><a href="#" class="hover:text-brand transition-colors" onclick="navTo('Politics', null, event)">Politics</a></li>
+        <li><a href="#" class="hover:text-brand transition-colors" onclick="navTo('Tech', null, event)">Technology</a></li>
+        <li><a href="#" class="hover:text-brand transition-colors" onclick="navTo('Sports', null, event)">Sports</a></li>
+        <li><a href="#" class="hover:text-brand transition-colors" onclick="navTo('Opinion', null, event)">Opinion</a></li>
+      </ul>
+    </div>
+    <div class="md:col-span-4">
+      <h3 class="text-white font-bold uppercase tracking-wider mb-4 text-sm">Newsletter</h3>
+      <p class="text-sm text-slate-400 mb-4">Get the day's best stories delivered straight to your inbox.</p>
+      <form onsubmit="handleSubscribe(event)" class="flex flex-col gap-3">
+        <input type="email" id="nl-email" placeholder="Email address" required class="w-full bg-slate-800 border border-slate-700 text-white px-4 py-2 rounded focus:outline-none focus:border-brand transition-colors">
+        <button type="submit" id="nl-btn" class="w-full bg-brand hover:bg-[#9d3f26] text-white font-bold px-4 py-2.5 rounded transition-colors flex items-center justify-center gap-2">
+          Subscribe <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</footer>
+
+<script>
+// --- CONFIGURATION ---
+const TARGET_SITE = "The Daily Post News";
+const API_URL = 'https://admin.mendekalemass.ac.ug/api/news'; 
+const BASE_DOMAIN = 'https://admin.mendekalemass.ac.ug';
+
+document.getElementById('nav-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+let articles = [];
+let prevPage = 'home';
+
+// --- DATA FETCHING ---
+async function fetchNewsData() {
+  try {
+    const response = await fetch(API_URL);
+    const rawData = await response.json();
+    
+    // Filter by Site Name
+    const filteredData = rawData.filter(item => item.site && item.site.name === TARGET_SITE);
+
+    articles = filteredData.map(item => {
+      let img = item.image || '';
+      if (img && !img.startsWith('http')) img = BASE_DOMAIN + (img.startsWith('/') ? '' : '/') + img;
+      return {
+        id: item.id,
+        title: item.title,
+        cat: item.category ? item.category.name : 'News', 
+        author: item.author || 'Staff Writer',
+        image: img,
+        lede: item.lede || '',
+        body: item.body || item.lede || '',
+        date: item.created_at ? new Date(item.created_at) : new Date()
+      };
+    }).sort((a,b) => b.date - a.date);
+
+    if(articles.length > 0) {
+      document.getElementById('breaking-text').textContent = articles[0].title;
+    }
+    
+    buildDynamicNav();
+    renderAll();
+  } catch (error) {
+    console.error("API Error:", error);
+  }
+}
+
+// --- DYNAMIC NAVIGATION ---
+function buildDynamicNav() {
+  const navEl = document.getElementById('dynamic-nav');
+  const categories = [...new Set(articles.map(a => a.cat))];
+  let html = `<li><a href="#" class="nav-link text-brand border-b-2 border-brand pb-2" onclick="navTo('home', this, event)">Home</a></li>`;
+  categories.forEach(cat => {
+    if(cat.toLowerCase() !== 'opinion') {
+       html += `<li><a href="#" class="nav-link hover:text-brand border-b-2 border-transparent hover:border-brand/30 pb-2 transition-all" onclick="navTo('${cat}', this, event)">${cat}</a></li>`;
+    }
+  });
+  navEl.innerHTML = html;
+}
+
+// --- RENDERING ---
+function renderAll() {
+  const news = articles.filter(a => a.cat.toLowerCase() !== 'opinion');
+  document.getElementById('latest-count').textContent = `${news.length} stories`;
+  renderFeatured();
+  renderList('latest-list', news.slice(3, 10)); 
+  renderOpinions();
+}
+
+function renderFeatured() {
+  const container = document.getElementById('featured-container');
+  const newsArts = articles.filter(a => a.cat.toLowerCase() !== 'opinion');
+  if (newsArts.length === 0) return;
+  const mainArt = newsArts[0];
+  const sideArts = newsArts.slice(1, 3);
+
+  container.innerHTML = `
+    <div class="md:col-span-8 group cursor-pointer" onclick="readArticle(${mainArt.id})">
+      <div class="overflow-hidden rounded shadow-sm mb-4 h-72 md:h-[400px]">
+        <img src="${mainArt.image}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+      </div>
+      <span class="text-brand text-xs font-bold uppercase tracking-widest mb-2 block">${mainArt.cat}</span>
+      <h2 class="text-3xl md:text-5xl font-serif font-bold leading-tight mb-3 group-hover:text-brand transition-colors">${mainArt.title}</h2>
+      <p class="text-gray-600 text-lg mb-3 leading-relaxed hidden sm:block">${mainArt.lede}</p>
+    </div>
+    <div class="md:col-span-4 flex flex-col gap-6 md:pl-6 md:border-l border-gray-200">
+      ${sideArts.map(a => `
+        <div class="group cursor-pointer pb-6 border-b border-gray-100 last:border-0" onclick="readArticle(${a.id})">
+          <div class="overflow-hidden rounded shadow-sm mb-3 h-40">
+             <img src="${a.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+          </div>
+          <span class="text-brand text-xs font-bold uppercase tracking-widest mb-1 block">${a.cat}</span>
+          <h3 class="text-xl font-serif font-bold leading-tight group-hover:text-brand">${a.title}</h3>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderList(id, list) {
+  const el = document.getElementById(id); 
+  el.innerHTML = list.map((a, i) => `
+    <div class="flex gap-4 py-5 border-b border-gray-100 group cursor-pointer hover:bg-gray-50 px-2 rounded transition-colors" onclick="readArticle(${a.id})">
+      <div class="font-bold text-gray-200 text-3xl font-serif w-8 text-right shrink-0">${i + 1}</div>
+      <div class="overflow-hidden rounded shrink-0 w-28 h-20"><img src="${a.image}" class="w-full h-full object-cover"></div>
+      <div class="flex-1">
+        <span class="text-brand text-[10px] font-bold uppercase tracking-widest mb-1 block">${a.cat}</span>
+        <h3 class="text-lg font-bold font-serif leading-snug mb-1 group-hover:text-brand">${a.title}</h3>
+      </div>
+    </div>`).join('');
+}
+
+function renderOpinions() {
+  const el = document.getElementById('home-opinions'); 
+  const ops = articles.filter(a => a.cat.toLowerCase() === 'opinion').slice(0, 3);
+  el.innerHTML = ops.map(a => `
+    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 group cursor-pointer hover:border-brand transition-all" onclick="readArticle(${a.id})">
+      <blockquote class="font-serif italic text-gray-800 text-lg mb-4 line-clamp-4">"${a.lede}"</blockquote>
+      <div class="text-sm font-semibold text-gray-900">— ${a.author}</div>
+    </div>`).join('');
+}
+
+function navTo(name, el, e) {
+  if (e) e.preventDefault();
+  document.querySelectorAll('.nav-link').forEach(a => a.className = "nav-link hover:text-brand border-b-2 border-transparent pb-2 transition-all");
+  if (el) el.className = "nav-link text-brand border-b-2 border-brand pb-2";
+  if (name.toLowerCase() === 'home') {
+    prevPage = 'home'; showPage('home');
+  } else {
+    prevPage = 'category';
+    document.getElementById('cat-title').textContent = name;
+    renderList('category-list', articles.filter(a => a.cat.toLowerCase() === name.toLowerCase()));
+    showPage('category');
+  }
+}
+
+function readArticle(id) {
+  const a = articles.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('full-cat').textContent = a.cat;
+  document.getElementById('full-title').textContent = a.title;
+  document.getElementById('full-author').textContent = a.author;
+  document.getElementById('full-date').innerHTML = `<i class="fa-regular fa-clock"></i> ${a.date.toLocaleDateString()}`;
+  document.getElementById('full-image-container').innerHTML = `<img src="${a.image}" class="w-full max-h-[500px] object-cover">`;
+  document.getElementById('full-body').innerHTML = a.body.includes('<p>') ? a.body : a.body.split('\n\n').map(p => `<p>${p}</p>`).join('');
+  showPage('article');
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+  document.getElementById('page-' + name).classList.add('visible');
+  window.scrollTo(0, 0); 
+}
+
+function goBack() { showPage(prevPage); }
+
+function clearSearch() { document.getElementById('search-input').value = ''; showPage(prevPage); }
+
+function handleSubscribe(e) {
+  e.preventDefault();
+  alert('Thank you for subscribing!');
+}
+
+fetchNewsData();
+</script>
+</body>
+</html>

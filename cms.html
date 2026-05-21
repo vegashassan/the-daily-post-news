@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eagle Eye | Multi-Site Intelligence Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+  tailwind.config = {
+    theme: { extend: { colors: { brand: '#011433', accent: '#d50a0e', gold: '#fcab04' } } }
+  }
+</script>
+<style>
+  [x-cloak] { display: none !important; }
+  .modal-overlay { animation: fadeIn 0.2s ease-out forwards; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-content { animation: slideDown 0.3s ease-out forwards; max-height: 90vh; overflow-y: auto; }
+  @keyframes slideDown { from { opacity: 0; transform: scale(0.95) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  
+  .tab-active { color: #fcab04; border-bottom: 3px solid #d50a0e; background: rgba(255,255,255,0.05); opacity: 1 !important; }
+  .loader-bar { height: 3px; width: 0%; background: #fcab04; transition: width 0.3s ease; }
+</style>
+</head>
+<body class="bg-[#f8fafc] font-sans antialiased text-slate-800 flex flex-col min-h-screen">
+
+<!-- Global Loader Bar -->
+<div class="fixed top-0 left-0 right-0 z-[100]">
+    <div id="global-loader" class="loader-bar"></div>
+</div>
+
+<div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3"></div>
+
+<!-- ==========================================
+     HEADER & NAVIGATION
+=========================================== -->
+<header class="bg-brand text-white shadow-2xl sticky top-0 z-40">
+  <div class="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-4 cursor-pointer" onclick="exitSite()">
+      <div class="bg-gold p-2 rounded shadow-inner rotate-3">
+        <i class="fa-solid fa-eye text-brand text-2xl"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-black tracking-tighter uppercase">NEWS CMS</h1>
+        <span class="text-[9px] text-gold font-bold uppercase tracking-[0.3em] block leading-none">Command & Control</span>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-6">
+        <div id="site-display" class="hidden flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
+            <span id="active-site-name" class="text-xs font-black uppercase tracking-widest text-gold"></span>
+        </div>
+        <button id="btn-exit" onclick="exitSite()" class="hidden text-[10px] font-black uppercase text-white/40 hover:text-accent transition-colors">Terminate Session</button>
+    </div>
+  </div>
+
+  <!-- Multi-Level Tabs -->
+  <div class="max-w-[1600px] mx-auto px-6 flex">
+    <button onclick="switchTab('sites')" id="tab-sites" class="px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all tab-active">
+      <i class="fa-solid fa-network-wired mr-2"></i> Infrastructure
+    </button>
+    <div id="content-tabs" class="hidden flex">
+        <button onclick="switchTab('news')" id="tab-news" class="px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100">
+            <i class="fa-solid fa-file-invoice mr-2"></i> Intel Reports
+        </button>
+        <button onclick="switchTab('categories')" id="tab-categories" class="px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100">
+            <i class="fa-solid fa-layer-group mr-2"></i> Sectors
+        </button>
+        <button onclick="switchTab('events')" id="tab-events" class="px-8 py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100">
+            <i class="fa-solid fa-camera-retro mr-2"></i> Visual Ops
+        </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1600px] mx-auto px-6 py-10 flex-1 w-full">
+
+    <!-- SITES VIEW -->
+    <div id="view-sites" class="space-y-8">
+        <div class="flex justify-between items-end border-b border-slate-200 pb-6">
+            <div>
+                <h2 class="text-4xl font-black text-brand tracking-tighter uppercase">Global Network</h2>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Target acquisition & infrastructure management</p>
+            </div>
+            <button onclick="openModal('site')" class="bg-brand text-white px-8 py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl hover:translate-y-[-2px] transition-all">Register New Coordinate</button>
+        </div>
+        <div id="list-sites" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+    </div>
+
+    <!-- NEWS VIEW -->
+    <div id="view-news" class="hidden space-y-8">
+        <div class="flex justify-between items-center bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+            <div>
+                <h2 class="text-3xl font-black text-brand tracking-tighter uppercase">Active Intel Feed</h2>
+                <p id="news-status" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Retrieving reports...</p>
+            </div>
+            <button onclick="openModal('news')" class="bg-accent text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest shadow-lg hover:scale-105 transition-all">New Intel Draft</button>
+        </div>
+        <div id="list-news" class="grid grid-cols-1 gap-4"></div>
+    </div>
+
+    <!-- CATEGORIES VIEW -->
+    <div id="view-categories" class="hidden space-y-8">
+        <div class="flex justify-between items-center">
+            <h2 class="text-3xl font-black text-brand uppercase tracking-tighter">Sector Classification</h2>
+            <button onclick="openModal('category')" class="bg-brand text-white px-6 py-3 rounded-lg font-black text-xs uppercase tracking-widest">Add Sector</button>
+        </div>
+        <div id="list-categories" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+    </div>
+
+    <!-- EVENTS VIEW -->
+    <div id="view-events" class="hidden space-y-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-black text-brand uppercase tracking-tighter">Visual Operations</h2>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Multi-photo gallery management</p>
+            </div>
+            <button onclick="openModal('event')" class="bg-gold text-brand px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg">Launch Photo Op</button>
+        </div>
+        <div id="list-events" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </div>
+
+</main>
+
+<!-- ==========================================
+     INTELLIGENCE MODALS
+=========================================== -->
+
+<!-- 1. Site Modal -->
+<div id="modal-site" class="fixed inset-0 z-50 bg-brand/90 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm modal-content overflow-hidden">
+        <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h2 class="font-black uppercase tracking-widest text-brand text-sm">Site Definition</h2>
+            <button onclick="closeModals()" class="text-slate-300 hover:text-accent"><i class="fa-solid fa-circle-xmark text-2xl"></i></button>
+        </div>
+        <form id="form-site" onsubmit="handleSave(event, 'sites')" class="p-8 space-y-6">
+            <input type="hidden" id="site-id">
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Coordinate Name</label>
+                <input type="text" id="site-name" required placeholder="e.g. Eagle Eye Uganda" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none focus:border-brand font-bold transition-all">
+            </div>
+            <button type="submit" class="w-full bg-brand text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl">Secure Coordinate</button>
+        </form>
+    </div>
+</div>
+
+<!-- 2. News Modal -->
+<div id="modal-news" class="fixed inset-0 z-50 bg-brand/90 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl modal-content">
+        <div class="p-8 border-b flex justify-between items-center bg-slate-50">
+            <h2 class="text-2xl font-black uppercase text-brand tracking-tighter">Intel Terminal</h2>
+            <button onclick="closeModals()" class="text-slate-300 hover:text-accent transition-colors"><i class="fa-solid fa-circle-xmark text-2xl"></i></button>
+        </div>
+        <form id="form-news" onsubmit="handleSave(event, 'news')" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <input type="hidden" id="news-id">
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Primary Headline</label>
+                <input type="text" id="news-title" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-xl outline-none focus:border-brand">
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Sector</label>
+                <select id="news-cat" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none"></select>
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Author / Source</label>
+                <input type="text" id="news-author" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold">
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Visual Intel (Image)</label>
+                <input type="file" id="news-image" class="text-xs font-bold text-slate-500">
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Publish Date</label>
+                <input type="datetime-local" id="news-date" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Lede (Summary)</label>
+                <textarea id="news-lede" rows="2" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-medium outline-none focus:border-brand"></textarea>
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Intelligence Body</label>
+                <textarea id="news-body" rows="6" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-medium outline-none focus:border-brand"></textarea>
+            </div>
+            <div class="md:col-span-2 flex justify-end gap-4 border-t pt-6">
+                <button type="button" onclick="closeModals()" class="px-6 font-black uppercase text-xs text-slate-400">Cancel</button>
+                <button type="submit" class="bg-brand text-white px-12 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl">Transmit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. Category Modal -->
+<div id="modal-category" class="fixed inset-0 z-50 bg-brand/90 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm modal-content">
+        <div class="p-6 border-b flex justify-between items-center">
+            <h2 class="font-black uppercase tracking-widest text-brand text-xs">Sector Definition</h2>
+            <button onclick="closeModals()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="form-category" onsubmit="handleSave(event, 'categories')" class="p-8 space-y-6">
+            <input type="text" id="cat-name" required placeholder="Sector Name" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand">
+            <button type="submit" class="w-full bg-brand text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest">Register Sector</button>
+        </form>
+    </div>
+</div>
+
+<!-- 4. Event Modal -->
+<div id="modal-event" class="fixed inset-0 z-50 bg-brand/90 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md modal-content">
+        <div class="p-8 border-b flex justify-between items-center bg-slate-50">
+            <h2 class="text-xl font-black uppercase text-brand tracking-tighter">Visual Op Setup</h2>
+            <button onclick="closeModals()"><i class="fa-solid fa-circle-xmark text-2xl text-slate-300"></i></button>
+        </div>
+        <form id="form-event" onsubmit="handleSave(event, 'events')" class="p-8 space-y-6" enctype="multipart/form-data">
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Op Title</label>
+                <input type="text" id="event-title" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand">
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Target Date</label>
+                <input type="date" id="event-date" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand">
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Photo Batch (Multiple)</label>
+                <input type="file" id="event-photos" multiple accept="image/*" class="text-xs font-bold">
+            </div>
+            <button type="submit" class="w-full bg-brand text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl">Initialize Op</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// CORE STATE
+// ==========================================
+const API = 'https://admin.mendekalemass.ac.ug/api';
+let currentSiteId = null;
+let currentSiteName = "";
+// state stores data locally: sites, news, categories, events
+let state = { sites: [], news: [], categories: [], events: [] };
+let editingId = null; // Track if we are editing news
+
+// ==========================================
+// API ENGINE & LOADERS
+// ==========================================
+async function apiCall(endpoint, method = 'GET', body = null, isFile = false) {
+    const loader = document.getElementById('global-loader');
+    loader.style.width = '30%';
+    
+    try {
+        const options = { method, headers: { 'Accept': 'application/json' } };
+        if (body) {
+            if (isFile) options.body = body;
+            else {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
+        }
+
+        const res = await fetch(`${API}${endpoint}`, options);
+        loader.style.width = '100%';
+        
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || 'Transmission Interrupted');
+        }
+        
+        setTimeout(() => loader.style.width = '0%', 400);
+        return await res.json();
+    } catch (e) {
+        showToast(e.message, 'error');
+        loader.style.width = '0%';
+        throw e;
+    }
+}
+
+// ==========================================
+// SITE HUB LOGIC
+// ==========================================
+async function loadSites() {
+    state.sites = await apiCall('/sites');
+    const container = document.getElementById('list-sites');
+    container.innerHTML = state.sites.map(s => `
+        <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:border-gold hover:shadow-2xl transition-all group relative overflow-hidden">
+            <div class="absolute -top-4 -right-4 w-20 h-20 bg-slate-50 rounded-full group-hover:bg-gold/10 transition-colors"></div>
+            <h3 class="text-2xl font-black text-brand tracking-tighter uppercase mb-6 relative z-10">${s.name}</h3>
+            <div class="flex gap-2 relative z-10">
+                <button onclick="enterSite(${s.id}, '${s.name}')" class="flex-1 bg-brand text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-accent transition-all">Secure Login</button>
+                <button onclick="openModal('site', ${s.id})" class="p-3 text-slate-300 hover:text-brand"><i class="fa-solid fa-sliders"></i></button>
+                <button onclick="handleDelete('sites', ${s.id})" class="p-3 text-slate-300 hover:text-accent"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function enterSite(id, name) {
+    currentSiteId = id;
+    currentSiteName = name;
+    document.getElementById('active-site-name').textContent = name;
+    document.getElementById('site-display').classList.remove('hidden');
+    document.getElementById('btn-exit').classList.remove('hidden');
+    document.getElementById('content-tabs').classList.remove('hidden');
+    document.getElementById('content-tabs').classList.add('flex');
+    
+    // Switch to news and it will trigger data load
+    switchTab('news');
+}
+
+function exitSite() {
+    currentSiteId = null;
+    document.getElementById('site-display').classList.add('hidden');
+    document.getElementById('btn-exit').classList.add('hidden');
+    document.getElementById('content-tabs').classList.add('hidden');
+    switchTab('sites');
+}
+
+// ==========================================
+// NAVIGATION & SCOPED CONTENT
+// ==========================================
+function switchTab(tab) {
+    document.querySelectorAll('main > div').forEach(v => v.classList.add('hidden'));
+    document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+    document.querySelectorAll('header button').forEach(b => b.classList.remove('tab-active'));
+    document.getElementById(`tab-${tab}`).classList.add('tab-active');
+
+    if (tab === 'sites') {
+        loadSites();
+    } else if (currentSiteId) {
+        // To show "News", we MUST have categories loaded first for the modal dropdown
+        if (tab === 'news') {
+            loadContent('categories').then(() => loadContent('news'));
+        } else {
+            loadContent(tab);
+        }
+    }
+}
+
+async function loadContent(type) {
+    // Send site_id to the API
+    const endpoint = `/${type}?site_id=${currentSiteId}`;
+    const data = await apiCall(endpoint);
+    
+    // EXTRA PROTECTION: Filter the data locally to ensure NO data from other sites leaks in
+    state[type] = data.filter(item => item.site_id == currentSiteId);
+    
+    renderContent(type);
+}
+
+function renderContent(type) {
+    const container = document.getElementById(`list-${type}`);
+    
+    if (type === 'news') {
+        container.innerHTML = state.news.map(a => `
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-6 hover:shadow-md transition-all">
+                <div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden shrink-0 border border-slate-100">
+                    <img src="${a.image || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/150?text=NO+IMAGE'">
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[9px] font-black bg-gold/20 text-brand px-2 py-0.5 rounded uppercase tracking-widest">${a.category?.name || 'Unset'}</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">${new Date(a.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <h4 class="font-black text-brand uppercase tracking-tighter text-lg leading-none">${a.title}</h4>
+                    <p class="text-xs text-slate-400 font-bold uppercase mt-1 italic">Source: ${a.author}</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openModal('news', ${a.id})" class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-brand hover:text-white transition-all flex items-center justify-center"><i class="fa-solid fa-pen-nib text-xs"></i></button>
+                    <button onclick="handleDelete('news', ${a.id})" class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-accent hover:text-white transition-all flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    if (type === 'categories') {
+        container.innerHTML = state.categories.map(c => `
+            <div class="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center group">
+                <span class="font-black text-xs uppercase tracking-widest text-brand">${c.name}</span>
+                <div class="flex gap-2">
+                    <button onclick="openModal('category', ${c.id})" class="text-slate-300 hover:text-brand transition-all"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="handleDelete('categories', ${c.id})" class="text-slate-200 hover:text-accent opacity-0 group-hover:opacity-100 transition-all"><i class="fa-solid fa-circle-minus"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    if (type === 'events') {
+        container.innerHTML = state.events.map(e => `
+            <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all">
+                <div class="h-48 bg-slate-900 relative">
+                    <img src="${e.photos[0]?.photo || 'https://via.placeholder.com/400x200'}" class="w-full h-full object-cover opacity-60">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="bg-gold text-brand px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">${e.photos.length} Captured Frames</span>
+                    </div>
+                </div>
+                <div class="p-6 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-black text-brand uppercase tracking-tighter">${e.title}</h4>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">${new Date(e.event_date).toDateString()}</p>
+                    </div>
+                    <button onclick="handleDelete('events', ${e.id})" class="text-slate-300 hover:text-accent transition-colors"><i class="fa-solid fa-trash-can text-lg"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+// ==========================================
+// MODAL & FORM HANDLING
+// ==========================================
+function openModal(type, id = null) {
+    const modal = document.getElementById(`modal-${type}`);
+    const form = document.getElementById(`form-${type}`);
+    form.reset();
+    editingId = id; // Set global editing ID
+
+    if (id) {
+        // Retrieve only from current site's loaded state
+        const item = state[type === 'site' ? 'sites' : (type === 'news' ? 'news' : (type === 'category' ? 'categories' : 'events'))].find(x => x.id === id);
+        
+        if (type === 'site') {
+            document.getElementById('site-id').value = item.id;
+            document.getElementById('site-name').value = item.name;
+        } else if (type === 'news') {
+            document.getElementById('news-id').value = item.id;
+            document.getElementById('news-title').value = item.title;
+            document.getElementById('news-author').value = item.author;
+            document.getElementById('news-lede').value = item.lede;
+            document.getElementById('news-body').value = item.body;
+            document.getElementById('news-cat').value = item.category_id;
+        } else if (type === 'category') {
+             document.getElementById('cat-name').value = item.name;
+        }
+    }
+
+    // Filter categories dropdown to ONLY show sectors for this site
+    if (type === 'news') {
+        const sel = document.getElementById('news-cat');
+        const siteSectors = state.categories.filter(c => c.site_id == currentSiteId);
+        sel.innerHTML = siteSectors.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        if (siteSectors.length === 0) {
+            sel.innerHTML = `<option value="">No sectors found. Create one first.</option>`;
+        }
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeModals() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+}
+
+async function handleSave(e, type) {
+    e.preventDefault();
+    const formData = new FormData();
+    let endpoint = `/${type === 'news' ? 'news' : type === 'categories' ? 'categories' : type}`;
+    
+    if (type === 'sites') {
+        const siteId = document.getElementById('site-id').value;
+        const payload = { name: document.getElementById('site-name').value };
+        await apiCall(siteId ? `${endpoint}/${siteId}` : endpoint, 'POST', payload);
+    } 
+    else if (type === 'news') {
+        const newsId = document.getElementById('news-id').value;
+        formData.append('site_id', currentSiteId);
+        formData.append('title', document.getElementById('news-title').value);
+        formData.append('author', document.getElementById('news-author').value);
+        formData.append('category', document.getElementById('news-cat').selectedOptions[0].text);
+        formData.append('lede', document.getElementById('news-lede').value);
+        formData.append('body', document.getElementById('news-body').value);
+        const img = document.getElementById('news-image').files[0];
+        if (img) formData.append('image', img);
+        
+        await apiCall(newsId ? `${endpoint}/${newsId}` : endpoint, 'POST', formData, true);
+    }
+    else if (type === 'categories') {
+        const payload = { site_id: currentSiteId, name: document.getElementById('cat-name').value };
+        // Check if editing or new
+        const url = editingId ? `${endpoint}/${editingId}` : endpoint;
+        await apiCall(url, 'POST', payload);
+    }
+    else if (type === 'events') {
+        formData.append('site_id', currentSiteId);
+        formData.append('title', document.getElementById('event-title').value);
+        formData.append('event_date', document.getElementById('event-date').value);
+        const photos = document.getElementById('event-photos').files;
+        for (let i = 0; i < photos.length; i++) {
+            formData.append('photos[]', photos[i]);
+        }
+        await apiCall('/events', 'POST', formData, true);
+    }
+
+    closeModals();
+    showToast("System Synced Successfully");
+    if (type === 'sites') loadSites(); else switchTab(type === 'categories' ? 'categories' : (type === 'news' ? 'news' : 'events'));
+}
+
+async function handleDelete(type, id) {
+    if (!confirm("Confirm intel purge from database? This action is irreversible.")) return;
+    const endpoint = `/${type === 'news' ? 'news' : type === 'categories' ? 'categories' : type}/${id}`;
+    await apiCall(endpoint, 'DELETE');
+    showToast("Data Purged", 'error');
+    if (type === 'sites') loadSites(); else loadContent(type);
+}
+
+// Helper: Toast
+function showToast(msg, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = `${type === 'success' ? 'bg-brand text-gold' : 'bg-accent text-white'} px-6 py-4 rounded-2xl shadow-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-3 transition-all duration-500`;
+    t.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} text-lg"></i> ${msg}`;
+    container.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(20px)'; setTimeout(() => t.remove(), 500); }, 3000);
+}
+
+// Initial Launch
+loadSites();
+
+</script>
+</body>
+</html>
