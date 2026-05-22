@@ -248,7 +248,7 @@ function buildDynamicNav() {
 // --- RENDERING ---
 function renderAll() {
   const news = articles.filter(a => a.cat.toLowerCase() !== 'opinion');
-  document.getElementById('latest-count').textContent = `${news.length} stories`;
+  document.getElementById('latest-count').textContent = `1000+ stories`;
   renderFeatured();
   renderList('latest-list', news.slice(3, 10)); 
   renderOpinions();
