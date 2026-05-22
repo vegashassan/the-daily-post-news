@@ -139,6 +139,17 @@
       <span class="text-brand text-sm font-bold uppercase tracking-widest mb-4 block" id="full-cat"></span>
       <h1 class="text-4xl md:text-5xl font-bold font-serif leading-tight mb-6 text-gray-900" id="full-title"></h1>
       <div class="flex flex-wrap items-center gap-4 border-t border-b border-gray-200 py-4 mb-8 text-sm text-gray-600">
+        <div class="flex gap-3 mb-8">
+
+  <button onclick="shareArticle()"
+    class="bg-brand hover:bg-[#9d3f26] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+
+    <i class="fa-solid fa-share-nodes"></i>
+    Share Article
+
+  </button>
+
+</div>
         <div class="font-bold text-gray-900 flex items-center gap-2">
           <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500"><i class="fa-solid fa-user text-xs"></i></div>
           <span id="full-author"></span>
@@ -553,16 +564,57 @@ function clearSearch() {
   showPage('home');
 }
 
-function readArticle(id) {
+function readArticle(id, updateUrl = true) {
+
   const a = articles.find(x => x.id === id);
+
   if (!a) return;
+
   document.getElementById('full-cat').textContent = a.cat;
   document.getElementById('full-title').textContent = a.title;
   document.getElementById('full-author').textContent = a.author;
-  document.getElementById('full-date').innerHTML = `<i class="fa-regular fa-clock"></i> ${a.date.toLocaleDateString()}`;
-  document.getElementById('full-image-container').innerHTML = `<img src="${a.image}" class="w-full max-h-[500px] object-cover">`;
-  document.getElementById('full-body').innerHTML = a.body.includes('<p>') ? a.body : a.body.split('\n\n').map(p => `<p>${p}</p>`).join('');
+
+  document.getElementById('full-date').innerHTML =
+    `<i class="fa-regular fa-clock"></i> ${a.date.toLocaleDateString()}`;
+
+  document.getElementById('full-image-container').innerHTML =
+    `<img src="${a.image}" class="w-full max-h-[500px] object-cover">`;
+
+  document.getElementById('full-body').innerHTML =
+    a.body.includes('<p>')
+      ? a.body
+      : a.body.split('\n\n').map(p => `<p>${p}</p>`).join('');
+
+  // UPDATE URL
+  if (updateUrl) {
+    const url = `${window.location.pathname}?article=${id}`;
+    window.history.pushState({}, '', url);
+  }
+
   showPage('article');
+}
+
+
+function shareArticle() {
+
+  const url = window.location.href;
+
+  // Mobile Share API
+  if (navigator.share) {
+
+    navigator.share({
+      title: document.getElementById('full-title').textContent,
+      text: 'Check out this article',
+      url: url
+    });
+
+  } else {
+
+    // Fallback copy link
+    navigator.clipboard.writeText(url);
+
+    alert('Article link copied to clipboard!');
+  }
 }
 
 function showPage(name) {
@@ -580,7 +632,16 @@ function handleSubscribe(e) {
   alert('Thank you for subscribing!');
 }
 
-fetchNewsData();
-</script>
+fetchNewsData().then(() => {
+
+  const params = new URLSearchParams(window.location.search);
+
+  const articleId = params.get('article');
+
+  if (articleId) {
+    readArticle(Number(articleId), false);
+  }
+
+});</script>
 </body>
 </html>
