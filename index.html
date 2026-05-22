@@ -8,6 +8,9 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- FontAwesome Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5596190199043563"
+     crossorigin="anonymous"></script>
 <script>
   tailwind.config = {
     theme: {
@@ -254,29 +257,111 @@ function renderAll() {
 function renderFeatured() {
   const container = document.getElementById('featured-container');
   const newsArts = articles.filter(a => a.cat.toLowerCase() !== 'opinion');
+
   if (newsArts.length === 0) return;
+
   const mainArt = newsArts[0];
   const sideArts = newsArts.slice(1, 3);
 
   container.innerHTML = `
-    <div class="md:col-span-8 group cursor-pointer" onclick="readArticle(${mainArt.id})">
+
+    <!-- MAIN FEATURE -->
+    <div class="md:col-span-8 group cursor-pointer"
+         onclick="readArticle(${mainArt.id})">
+
       <div class="overflow-hidden rounded shadow-sm mb-4 h-72 md:h-[400px]">
-        <img src="${mainArt.image}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+        <img src="${mainArt.image}"
+             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
       </div>
-      <span class="text-brand text-xs font-bold uppercase tracking-widest mb-2 block">${mainArt.cat}</span>
-      <h2 class="text-3xl md:text-5xl font-serif font-bold leading-tight mb-3 group-hover:text-brand transition-colors">${mainArt.title}</h2>
-      <p class="text-gray-600 text-lg mb-3 leading-relaxed hidden sm:block">${mainArt.lede}</p>
-    </div>
-    <div class="md:col-span-4 flex flex-col gap-6 md:pl-6 md:border-l border-gray-200">
-      ${sideArts.map(a => `
-        <div class="group cursor-pointer pb-6 border-b border-gray-100 last:border-0" onclick="readArticle(${a.id})">
-          <div class="overflow-hidden rounded shadow-sm mb-3 h-40">
-             <img src="${a.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+
+      <span class="text-brand text-xs font-bold uppercase tracking-widest mb-2 block">
+        ${mainArt.cat}
+      </span>
+
+      <h2 class="text-3xl md:text-5xl font-serif font-bold leading-tight mb-3 group-hover:text-brand transition-colors">
+        ${mainArt.title}
+      </h2>
+
+      <p class="text-gray-600 text-lg mb-5 leading-relaxed hidden sm:block">
+        ${mainArt.lede}
+      </p>
+
+      <!-- AUTHOR + DATE -->
+      <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+            <i class="fa-solid fa-user text-xs text-gray-600"></i>
           </div>
-          <span class="text-brand text-xs font-bold uppercase tracking-widest mb-1 block">${a.cat}</span>
-          <h3 class="text-xl font-serif font-bold leading-tight group-hover:text-brand">${a.title}</h3>
-        </div>`).join('')}
-    </div>`;
+
+          <span class="font-semibold text-gray-700">
+            ${mainArt.author}
+          </span>
+        </div>
+
+        <span class="text-gray-300">•</span>
+
+        <div class="flex items-center gap-1">
+          <i class="fa-regular fa-clock"></i>
+
+          <span>
+            ${mainArt.date.toLocaleDateString()}
+          </span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- SIDE ARTICLES -->
+    <div class="md:col-span-4 flex flex-col gap-6 md:pl-6 md:border-l border-gray-200">
+
+      ${sideArts.map(a => `
+
+        <div class="group cursor-pointer pb-6 border-b border-gray-100 last:border-0"
+             onclick="readArticle(${a.id})">
+
+          <div class="overflow-hidden rounded shadow-sm mb-3 h-40">
+            <img src="${a.image}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+          </div>
+
+          <span class="text-brand text-xs font-bold uppercase tracking-widest mb-1 block">
+            ${a.cat}
+          </span>
+
+          <h3 class="text-xl font-serif font-bold leading-tight mb-3 group-hover:text-brand">
+            ${a.title}
+          </h3>
+
+          <!-- AUTHOR + DATE -->
+          <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+
+            <div class="flex items-center gap-1">
+              <i class="fa-solid fa-user text-[10px]"></i>
+              <span class="font-semibold text-gray-700">
+                ${a.author}
+              </span>
+            </div>
+
+            <span class="text-gray-300">•</span>
+
+            <div class="flex items-center gap-1">
+              <i class="fa-regular fa-clock text-[10px]"></i>
+
+              <span>
+                ${a.date.toLocaleDateString()}
+              </span>
+            </div>
+
+          </div>
+
+        </div>
+
+      `).join('')}
+
+    </div>
+  `;
 }
 
 function renderList(id, list) {
@@ -292,15 +377,162 @@ function renderList(id, list) {
     </div>`).join('');
 }
 
-function renderOpinions() {
-  const el = document.getElementById('home-opinions'); 
-  const ops = articles.filter(a => a.cat.toLowerCase() === 'opinion').slice(0, 3);
-  el.innerHTML = ops.map(a => `
-    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 group cursor-pointer hover:border-brand transition-all" onclick="readArticle(${a.id})">
-      <blockquote class="font-serif italic text-gray-800 text-lg mb-4 line-clamp-4">"${a.lede}"</blockquote>
-      <div class="text-sm font-semibold text-gray-900">— ${a.author}</div>
-    </div>`).join('');
+function renderList(id, list) {
+  const el = document.getElementById(id);
+
+  el.innerHTML = list.map((a, i) => `
+    <div class="flex gap-4 py-5 border-b border-gray-100 group cursor-pointer hover:bg-gray-50 px-2 rounded transition-colors"
+         onclick="readArticle(${a.id})">
+
+      <!-- Number -->
+      <div class="font-bold text-gray-200 text-3xl font-serif w-8 text-right shrink-0">
+        ${i + 1}
+      </div>
+
+      <!-- Image -->
+      <div class="overflow-hidden rounded shrink-0 w-28 h-20">
+        <img src="${a.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1">
+
+        <!-- Category -->
+        <span class="text-brand text-[10px] font-bold uppercase tracking-widest mb-1 block">
+          ${a.cat}
+        </span>
+
+        <!-- Title -->
+        <h3 class="text-lg font-bold font-serif leading-snug mb-2 group-hover:text-brand transition-colors">
+          ${a.title}
+        </h3>
+
+        <!-- Author + Date -->
+        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+
+          <div class="flex items-center gap-1">
+            <i class="fa-solid fa-user text-[10px]"></i>
+            <span class="font-semibold text-gray-700">${a.author}</span>
+          </div>
+
+          <span class="text-gray-300">|</span>
+
+          <div class="flex items-center gap-1">
+            <i class="fa-regular fa-clock text-[10px]"></i>
+            <span>${a.date.toLocaleDateString()}</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  `).join('');
 }
+
+// --- SEARCH FUNCTIONALITY ---
+document.getElementById('search-input').addEventListener('input', function () {
+
+  const query = this.value.trim().toLowerCase();
+
+  // If empty, go back home
+  if (!query) {
+    showPage('home');
+    return;
+  }
+
+  // Filter articles
+  const results = articles.filter(a =>
+    a.title.toLowerCase().includes(query) ||
+    a.lede.toLowerCase().includes(query) ||
+    a.author.toLowerCase().includes(query) ||
+    a.cat.toLowerCase().includes(query)
+  );
+
+  // Update title
+  document.getElementById('search-title').textContent =
+    `Search Results for "${this.value}"`;
+
+  // Render FULL ARTICLE CARDS
+  const searchList = document.getElementById('search-list');
+
+  if (results.length === 0) {
+    searchList.innerHTML = `
+      <div class="py-20 text-center">
+        <i class="fa-solid fa-magnifying-glass text-4xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 text-lg">No articles found.</p>
+      </div>
+    `;
+  } else {
+
+    searchList.innerHTML = results.map(a => `
+
+      <div class="group cursor-pointer border-b border-gray-200 py-6 hover:bg-gray-50 px-4 rounded-lg transition-all"
+           onclick="readArticle(${a.id})">
+
+        <div class="grid md:grid-cols-12 gap-5 items-start">
+
+          <!-- IMAGE -->
+          <div class="md:col-span-4 overflow-hidden rounded-lg">
+            <img src="${a.image}"
+                 class="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500">
+          </div>
+
+          <!-- CONTENT -->
+          <div class="md:col-span-8">
+
+            <!-- CATEGORY -->
+            <span class="text-brand text-xs font-bold uppercase tracking-widest mb-2 block">
+              ${a.cat}
+            </span>
+
+            <!-- TITLE -->
+            <h2 class="text-2xl md:text-3xl font-bold font-serif leading-tight mb-3 group-hover:text-brand transition-colors">
+              ${a.title}
+            </h2>
+
+            <!-- LEDE -->
+            <p class="text-gray-600 leading-relaxed mb-5">
+              ${a.lede || 'No summary available.'}
+            </p>
+
+            <!-- AUTHOR + DATE -->
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <i class="fa-solid fa-user text-xs text-gray-600"></i>
+                </div>
+
+                <span class="font-semibold text-gray-700">
+                  ${a.author}
+                </span>
+              </div>
+
+              <span class="text-gray-300">•</span>
+
+              <div class="flex items-center gap-1">
+                <i class="fa-regular fa-clock"></i>
+
+                <span>
+                  ${a.date.toLocaleDateString()}
+                </span>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `).join('');
+  }
+
+  // Show search page
+  showPage('search');
+});
 
 function navTo(name, el, e) {
   if (e) e.preventDefault();
@@ -314,6 +546,11 @@ function navTo(name, el, e) {
     renderList('category-list', articles.filter(a => a.cat.toLowerCase() === name.toLowerCase()));
     showPage('category');
   }
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  showPage('home');
 }
 
 function readArticle(id) {
