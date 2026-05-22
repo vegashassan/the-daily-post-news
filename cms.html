@@ -858,6 +858,22 @@ function openModal(type, id = null) {
 
             document.getElementById('news-cat').value = item.category_id;
 
+            
+
+            if (item.created_at) {
+
+                const dateObj = new Date(item.created_at);
+
+                if (!isNaN(dateObj)) {
+
+                    const formattedDate = dateObj.toISOString().slice(0, 16);
+
+                    document.getElementById('news-date').value = formattedDate;
+
+                }
+
+            }
+
         } else if (type === 'category') {
 
              document.getElementById('cat-name').value = item.name;
@@ -943,6 +959,18 @@ async function handleSave(e, type) {
         formData.append('lede', document.getElementById('news-lede').value);
 
         formData.append('body', document.getElementById('news-body').value);
+
+        
+
+        const newsDate = document.getElementById('news-date').value;
+
+        if (newsDate) {
+
+            formData.append('created_at', newsDate);
+
+        }
+
+        
 
         const img = document.getElementById('news-image').files[0];
 
