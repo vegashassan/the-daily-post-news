@@ -10,11 +10,7 @@
 
 <title>Eagle Eye | Multi-Site Intelligence Dashboard</title>
 
-<!-- Tailwind CSS -->
-
 <script src="https://cdn.tailwindcss.com"></script>
-
-<!-- FontAwesome Icons -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -32,27 +28,113 @@
 
   [x-cloak] { display: none !important; }
 
-  .modal-overlay { animation: fadeIn 0.2s ease-out forwards; }
 
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .modal-content { animation: slideDown 0.3s ease-out forwards; max-height: 90vh; overflow-y: auto; }
+  .modal-overlay  { animation: fadeIn 0.2s ease-out forwards; }
 
-  @keyframes slideDown { from { opacity: 0; transform: scale(0.95) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal-content  { animation: slideDown 0.3s ease-out forwards; max-height: 90vh; overflow-y: auto; }
 
-  
+
+
+  @keyframes fadeIn   { from { opacity: 0; }                                        to { opacity: 1; } }
+
+  @keyframes slideDown{ from { opacity: 0; transform: scale(0.95) translateY(-10px);} to { opacity: 1; transform: scale(1) translateY(0); } }
+
+
 
   .tab-active { color: #fcab04; border-bottom: 3px solid #d50a0e; background: rgba(255,255,255,0.05); opacity: 1 !important; }
 
   .loader-bar { height: 3px; width: 0%; background: #fcab04; transition: width 0.3s ease; }
 
-  
 
-  /* Hide scrollbar utility for touch navigation tabs */
 
   .scrollbar-none::-webkit-scrollbar { display: none; }
 
   .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+  /* ==========================================
+   GLOBAL LOADING STATES
+========================================== */
+
+.loader-bar {
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(90deg,#fcab04,#d50a0e);
+  transition: width 0.35s ease;
+  box-shadow: 0 0 20px rgba(252,171,4,.5);
+}
+
+/* Button loading */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: .8;
+}
+
+.btn-loading::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: white;
+  border-radius: 999px;
+  animation: spin .7s linear infinite;
+
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@keyframes spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Screen overlay loader */
+.screen-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(1,20,51,.75);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: .3s ease;
+}
+
+.screen-loader.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.loader-box {
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  text-align: center;
+  min-width: 260px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+
+.loader-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(1,20,51,.1);
+  border-top-color: #011433;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin2 .9s linear infinite;
+}
+
+@keyframes spin2 {
+  to { transform: rotate(360deg); }
+}
 
 </style>
 
@@ -66,11 +148,13 @@
 
 <div class="fixed top-0 left-0 right-0 z-[100]">
 
-    <div id="global-loader" class="loader-bar"></div>
+  <div id="global-loader" class="loader-bar"></div>
 
 </div>
 
 
+
+<!-- Toast Container -->
 
 <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 max-w-[calc(100vw-40px)]"></div>
 
@@ -78,13 +162,17 @@
 
 <!-- ==========================================
 
-     HEADER & NAVIGATION
+     HEADER
 
 =========================================== -->
 
 <header class="bg-brand text-white shadow-2xl sticky top-0 z-40">
 
   <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
+
+
+
+    <!-- Logo -->
 
     <div class="flex items-center gap-4 cursor-pointer self-start" onclick="exitSite()">
 
@@ -98,25 +186,31 @@
 
         <h1 class="text-xl font-black tracking-tighter uppercase">NEWS CMS</h1>
 
-        <span class="text-[9px] text-gold font-bold uppercase tracking-[0.3em] block leading-none">Command & Control</span>
+        <span class="text-[9px] text-gold font-bold uppercase tracking-[0.3em] block leading-none">Command &amp; Control</span>
 
       </div>
 
     </div>
 
-    
+
+
+    <!-- Active site badge + exit -->
 
     <div class="flex flex-wrap items-center gap-3 sm:gap-6 self-start sm:self-auto">
 
-        <div id="site-display" class="hidden flex items-center gap-3 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full">
+      <div id="site-display" class="hidden flex items-center gap-3 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full">
 
-            <span class="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
 
-            <span id="active-site-name" class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-gold"></span>
+        <span id="active-site-name" class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-gold"></span>
 
-        </div>
+      </div>
 
-        <button id="btn-exit" onclick="exitSite()" class="hidden text-[10px] font-black uppercase text-white/40 hover:text-accent transition-colors py-1.5">Terminate Session</button>
+      <button id="btn-exit" onclick="exitSite()" class="hidden text-[10px] font-black uppercase text-white/40 hover:text-accent transition-colors py-1.5">
+
+        Terminate Session
+
+      </button>
 
     </div>
 
@@ -124,13 +218,15 @@
 
 
 
-  <!-- Multi-Level Tabs -->
+  <!-- Tabs -->
 
   <div class="max-w-[1600px] mx-auto px-4 sm:px-6 border-t border-white/10">
 
     <div class="flex overflow-x-auto scrollbar-none whitespace-nowrap">
 
-      <button onclick="switchTab('sites')" id="tab-sites" class="px-6 sm:px-8 py-3.5 sm:py-4 text-[10px] font-black uppercase tracking-widest transition-all tab-active shrink-0">
+      <button onclick="switchTab('sites')" id="tab-sites"
+
+              class="px-6 sm:px-8 py-3.5 sm:py-4 text-[10px] font-black uppercase tracking-widest transition-all tab-active shrink-0">
 
         <i class="fa-solid fa-network-wired mr-2"></i> Infrastructure
 
@@ -138,23 +234,29 @@
 
       <div id="content-tabs" class="hidden flex">
 
-          <button onclick="switchTab('news')" id="tab-news" class="px-6 sm:px-8 py-3.5 sm:py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100 shrink-0">
+        <button onclick="switchTab('news')" id="tab-news"
 
-              <i class="fa-solid fa-file-invoice mr-2"></i> Intel Reports
+                class="px-6 sm:px-8 py-3.5 sm:py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100 shrink-0">
 
-          </button>
+          <i class="fa-solid fa-file-invoice mr-2"></i> Intel Reports
 
-          <button onclick="switchTab('categories')" id="tab-categories" class="px-6 sm:px-8 py-3.5 sm:py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100 shrink-0">
+        </button>
 
-              <i class="fa-solid fa-layer-group mr-2"></i> Sectors
+        <button onclick="switchTab('categories')" id="tab-categories"
 
-          </button>
+                class="px-6 sm:px-8 py-3.5 sm:py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100 shrink-0">
 
-          <button onclick="switchTab('events')" id="tab-events" class="px-6 sm:px-8 py-3.5 sm:py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100 shrink-0">
+          <i class="fa-solid fa-layer-group mr-2"></i> Sectors
 
-              <i class="fa-solid fa-camera-retro mr-2"></i> Visual Ops
+        </button>
 
-          </button>
+        <button onclick="switchTab('events')" id="tab-events"
+
+                class="px-6 sm:px-8 py-3.5 sm:py-4 text-[10px] font-black uppercase tracking-widest transition-all opacity-40 hover:opacity-100 shrink-0">
+
+          <i class="fa-solid fa-camera-retro mr-2"></i> Visual Ops
+
+        </button>
 
       </div>
 
@@ -166,97 +268,127 @@
 
 
 
+<!-- ==========================================
+
+     MAIN CONTENT
+
+=========================================== -->
+
 <main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 sm:py-10 flex-1 w-full">
 
 
 
-    <!-- SITES VIEW -->
+  <!-- SITES VIEW -->
 
-    <div id="view-sites" class="space-y-6 sm:space-y-8">
+  <div id="view-sites" class="space-y-6 sm:space-y-8">
 
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end border-b border-slate-200 pb-6 gap-4">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end border-b border-slate-200 pb-6 gap-4">
 
-            <div>
+      <div>
 
-                <h2 class="text-3xl sm:text-4xl font-black text-brand tracking-tighter uppercase">Global Network</h2>
+        <h2 class="text-3xl sm:text-4xl font-black text-brand tracking-tighter uppercase">Global Network</h2>
 
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Target acquisition & infrastructure management</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Target acquisition &amp; infrastructure management</p>
 
-            </div>
+      </div>
 
-            <button onclick="openModal('site')" class="bg-brand text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl hover:translate-y-[-2px] transition-all self-start sm:self-auto w-full sm:w-auto text-center">Register New Coordinate</button>
+      <button onclick="openModal('site')"
 
-        </div>
+              class="bg-brand text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl hover:translate-y-[-2px] transition-all self-start sm:self-auto w-full sm:w-auto text-center">
 
-        <div id="list-sites" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"></div>
+        Register New Coordinate
 
-    </div>
-
-
-
-    <!-- NEWS VIEW -->
-
-    <div id="view-news" class="hidden space-y-6 sm:space-y-8">
-
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-200 gap-4">
-
-            <div>
-
-                <h2 class="text-2xl sm:text-3xl font-black text-brand tracking-tighter uppercase">Active Intel Feed</h2>
-
-                <p id="news-status" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Retrieving reports...</p>
-
-            </div>
-
-            <button onclick="openModal('news')" class="bg-accent text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-black uppercase text-xs tracking-widest shadow-lg hover:scale-105 transition-all w-full sm:w-auto text-center">New Intel Draft</button>
-
-        </div>
-
-        <div id="list-news" class="grid grid-cols-1 gap-4"></div>
+      </button>
 
     </div>
 
+    <div id="list-sites" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"></div>
+
+  </div>
 
 
-    <!-- CATEGORIES VIEW -->
 
-    <div id="view-categories" class="hidden space-y-6 sm:space-y-8">
+  <!-- NEWS VIEW -->
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div id="view-news" class="hidden space-y-6 sm:space-y-8">
 
-            <h2 class="text-2xl sm:text-3xl font-black text-brand uppercase tracking-tighter">Sector Classification</h2>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-200 gap-4">
 
-            <button onclick="openModal('category')" class="bg-brand text-white px-5 py-3 rounded-lg font-black text-xs uppercase tracking-widest w-full sm:w-auto text-center">Add Sector</button>
+      <div>
 
-        </div>
+        <h2 class="text-2xl sm:text-3xl font-black text-brand tracking-tighter uppercase">Active Intel Feed</h2>
 
-        <div id="list-categories" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        <p id="news-status" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Retrieving reports...</p>
+
+      </div>
+
+      <button onclick="openModal('news')"
+
+              class="bg-accent text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-black uppercase text-xs tracking-widest shadow-lg hover:scale-105 transition-all w-full sm:w-auto text-center">
+
+        New Intel Draft
+
+      </button>
+
+    </div>
+
+    <div id="list-news" class="grid grid-cols-1 gap-4"></div>
+
+  </div>
+
+
+
+  <!-- CATEGORIES VIEW -->
+
+  <div id="view-categories" class="hidden space-y-6 sm:space-y-8">
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+      <h2 class="text-2xl sm:text-3xl font-black text-brand uppercase tracking-tighter">Sector Classification</h2>
+
+      <button onclick="openModal('category')"
+
+              class="bg-brand text-white px-5 py-3 rounded-lg font-black text-xs uppercase tracking-widest w-full sm:w-auto text-center">
+
+        Add Sector
+
+      </button>
 
     </div>
 
+    <div id="list-categories" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+
+  </div>
 
 
-    <!-- EVENTS VIEW -->
 
-    <div id="view-events" class="hidden space-y-6 sm:space-y-8">
+  <!-- EVENTS VIEW -->
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div id="view-events" class="hidden space-y-6 sm:space-y-8">
 
-            <div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 
-                <h2 class="text-2xl sm:text-3xl font-black text-brand uppercase tracking-tighter">Visual Operations</h2>
+      <div>
 
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Multi-photo gallery management</p>
+        <h2 class="text-2xl sm:text-3xl font-black text-brand uppercase tracking-tighter">Visual Operations</h2>
 
-            </div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Multi-photo gallery management</p>
 
-            <button onclick="openModal('event')" class="bg-gold text-brand px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg w-full sm:w-auto text-center">Launch Photo Op</button>
+      </div>
 
-        </div>
+      <button onclick="openModal('event')"
 
-        <div id="list-events" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"></div>
+              class="bg-gold text-brand px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg w-full sm:w-auto text-center">
+
+        Launch Photo Op
+
+      </button>
 
     </div>
+
+    <div id="list-events" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"></div>
+
+  </div>
 
 
 
@@ -266,7 +398,7 @@
 
 <!-- ==========================================
 
-     INTELLIGENCE MODALS
+     MODALS
 
 =========================================== -->
 
@@ -276,33 +408,43 @@
 
 <div id="modal-site" class="fixed inset-0 z-50 bg-brand/90 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm modal-content overflow-hidden">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm modal-content overflow-hidden">
 
-        <div class="p-5 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+    <div class="p-5 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
 
-            <h2 class="font-black uppercase tracking-widest text-brand text-xs">Site Definition</h2>
+      <h2 class="font-black uppercase tracking-widest text-brand text-xs">Site Definition</h2>
 
-            <button onclick="closeModals()" class="text-slate-300 hover:text-accent"><i class="fa-solid fa-circle-xmark text-2xl"></i></button>
+      <button onclick="closeModals()" class="text-slate-300 hover:text-accent">
 
-        </div>
+        <i class="fa-solid fa-circle-xmark text-2xl"></i>
 
-        <form id="form-site" onsubmit="handleSave(event, 'sites')" class="p-6 sm:p-8 space-y-6">
-
-            <input type="hidden" id="site-id">
-
-            <div>
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Coordinate Name</label>
-
-                <input type="text" id="site-name" required placeholder="e.g. Eagle Eye Uganda" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none focus:border-brand font-bold transition-all text-sm">
-
-            </div>
-
-            <button type="submit" class="w-full bg-brand text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl">Secure Coordinate</button>
-
-        </form>
+      </button>
 
     </div>
+
+    <form id="form-site" onsubmit="handleSave(event, 'sites')" class="p-6 sm:p-8 space-y-6">
+
+      <input type="hidden" id="site-id">
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Coordinate Name</label>
+
+        <input type="text" id="site-name" required placeholder="e.g. Eagle Eye Uganda"
+
+               class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none focus:border-brand font-bold transition-all text-sm">
+
+      </div>
+
+      <button type="submit" class="w-full bg-brand text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl">
+
+        Secure Coordinate
+
+      </button>
+
+    </form>
+
+  </div>
 
 </div>
 
@@ -312,87 +454,149 @@
 
 <div id="modal-news" class="fixed inset-0 z-50 bg-brand/90 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm md:max-w-4xl modal-content">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm md:max-w-4xl modal-content">
 
-        <div class="p-5 sm:p-6 border-b flex justify-between items-center bg-slate-50">
+    <div class="p-5 sm:p-6 border-b flex justify-between items-center bg-slate-50">
 
-            <h2 class="text-xl sm:text-2xl font-black uppercase text-brand tracking-tighter">Intel Terminal</h2>
+      <h2 class="text-xl sm:text-2xl font-black uppercase text-brand tracking-tighter">Intel Terminal</h2>
 
-            <button onclick="closeModals()" class="text-slate-300 hover:text-accent transition-colors"><i class="fa-solid fa-circle-xmark text-2xl"></i></button>
+      <button onclick="closeModals()" class="text-slate-300 hover:text-accent transition-colors">
 
-        </div>
+        <i class="fa-solid fa-circle-xmark text-2xl"></i>
 
-        <form id="form-news" onsubmit="handleSave(event, 'news')" class="p-5 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-
-            <input type="hidden" id="news-id">
-
-            <div class="md:col-span-2">
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Primary Headline</label>
-
-                <input type="text" id="news-title" required class="w-full p-3 sm:p-4 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-2xl font-black text-lg sm:text-xl outline-none focus:border-brand">
-
-            </div>
-
-            <div>
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Sector</label>
-
-                <select id="news-cat" class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none text-sm"></select>
-
-            </div>
-
-            <div>
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Author / Source</label>
-
-                <input type="text" id="news-author" class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-sm">
-
-            </div>
-
-            <div>
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Visual Intel (Image)</label>
-
-                <input type="file" id="news-image" class="text-xs font-bold text-slate-500 w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-brand hover:file:bg-slate-200">
-
-            </div>
-
-            <div>
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Publish Date</label>
-
-                <input type="datetime-local" id="news-date" class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-sm">
-
-            </div>
-
-            <div class="md:col-span-2">
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Lede (Summary)</label>
-
-                <textarea id="news-lede" rows="2" class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-medium outline-none focus:border-brand text-sm"></textarea>
-
-            </div>
-
-            <div class="md:col-span-2">
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Intelligence Body</label>
-
-                <textarea id="news-body" rows="6" class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-medium outline-none focus:border-brand text-sm"></textarea>
-
-            </div>
-
-            <div class="md:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 border-t pt-6">
-
-                <button type="button" onclick="closeModals()" class="py-3 px-6 font-black uppercase text-xs text-slate-400 hover:text-slate-600">Cancel</button>
-
-                <button type="submit" class="bg-brand text-white px-10 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl">Transmit</button>
-
-            </div>
-
-        </form>
+      </button>
 
     </div>
+
+    <form id="form-news" onsubmit="handleSave(event, 'news')" class="p-5 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+
+      <input type="hidden" id="news-id">
+
+
+
+      <!-- Title — full width -->
+
+      <div class="md:col-span-2">
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Primary Headline</label>
+
+        <input type="text" id="news-title" required
+
+               class="w-full p-3 sm:p-4 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-2xl font-black text-lg sm:text-xl outline-none focus:border-brand">
+
+      </div>
+
+
+
+      <!-- Sector -->
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Sector</label>
+
+        <select id="news-cat"
+
+                class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none text-sm"></select>
+
+      </div>
+
+
+
+      <!-- Author -->
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Author / Source</label>
+
+        <input type="text" id="news-author"
+
+               class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-sm">
+
+      </div>
+
+
+
+      <!-- Image -->
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Visual Intel (Image)</label>
+
+        <input type="file" id="news-image" accept="image/*"
+
+               class="text-xs font-bold text-slate-500 w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-brand hover:file:bg-slate-200">
+
+      </div>
+
+
+
+      <!-- Publish Date — required, always pre-filled -->
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">
+
+          Publish Date &amp; Time <span class="text-accent">*</span>
+
+        </label>
+
+        <input type="datetime-local" id="news-date" required
+
+               class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-sm outline-none focus:border-brand">
+
+      </div>
+
+
+
+      <!-- Lede — full width -->
+
+      <div class="md:col-span-2">
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Lede (Summary)</label>
+
+        <textarea id="news-lede" rows="2"
+
+                  class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-medium outline-none focus:border-brand text-sm"></textarea>
+
+      </div>
+
+
+
+      <!-- Body — full width -->
+
+      <div class="md:col-span-2">
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Intelligence Body</label>
+
+        <textarea id="news-body" rows="6"
+
+                  class="w-full p-3.5 bg-slate-50 border-2 border-slate-100 rounded-xl font-medium outline-none focus:border-brand text-sm"></textarea>
+
+      </div>
+
+
+
+      <!-- Actions -->
+
+      <div class="md:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 border-t pt-6">
+
+        <button type="button" onclick="closeModals()"
+
+                class="py-3 px-6 font-black uppercase text-xs text-slate-400 hover:text-slate-600">Cancel</button>
+
+        <button type="submit"
+
+                class="bg-brand text-white px-10 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl">
+
+          Transmit
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
 
 </div>
 
@@ -402,25 +606,43 @@
 
 <div id="modal-category" class="fixed inset-0 z-50 bg-brand/90 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm modal-content">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm modal-content">
 
-        <div class="p-5 border-b flex justify-between items-center bg-slate-50">
+    <div class="p-5 border-b flex justify-between items-center bg-slate-50">
 
-            <h2 class="font-black uppercase tracking-widest text-brand text-xs">Sector Definition</h2>
+      <h2 class="font-black uppercase tracking-widest text-brand text-xs">Sector Definition</h2>
 
-            <button onclick="closeModals()"><i class="fa-solid fa-circle-xmark text-2xl text-slate-300 hover:text-accent transition-colors"></i></button>
+      <button onclick="closeModals()">
 
-        </div>
+        <i class="fa-solid fa-circle-xmark text-2xl text-slate-300 hover:text-accent transition-colors"></i>
 
-        <form id="form-category" onsubmit="handleSave(event, 'categories')" class="p-6 sm:p-8 space-y-6">
-
-            <input type="text" id="cat-name" required placeholder="Sector Name" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand text-sm">
-
-            <button type="submit" class="w-full bg-brand text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest">Register Sector</button>
-
-        </form>
+      </button>
 
     </div>
+
+    <form id="form-category" onsubmit="handleSave(event, 'categories')" class="p-6 sm:p-8 space-y-6">
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Sector Name</label>
+
+        <input type="text" id="cat-name" required placeholder="e.g. Politics"
+
+               class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand text-sm">
+
+      </div>
+
+      <button type="submit"
+
+              class="w-full bg-brand text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest">
+
+        Register Sector
+
+      </button>
+
+    </form>
+
+  </div>
 
 </div>
 
@@ -430,51 +652,77 @@
 
 <div id="modal-event" class="fixed inset-0 z-50 bg-brand/90 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md modal-content">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md modal-content">
 
-        <div class="p-5 border-b flex justify-between items-center bg-slate-50">
+    <div class="p-5 border-b flex justify-between items-center bg-slate-50">
 
-            <h2 class="text-xl font-black uppercase text-brand tracking-tighter">Visual Op Setup</h2>
+      <h2 class="text-xl font-black uppercase text-brand tracking-tighter">Visual Op Setup</h2>
 
-            <button onclick="closeModals()"><i class="fa-solid fa-circle-xmark text-2xl text-slate-300 hover:text-accent transition-colors"></i></button>
+      <button onclick="closeModals()">
 
-        </div>
+        <i class="fa-solid fa-circle-xmark text-2xl text-slate-300 hover:text-accent transition-colors"></i>
 
-        <form id="form-event" onsubmit="handleSave(event, 'events')" class="p-6 sm:p-8 space-y-6" enctype="multipart/form-data">
-
-            <div>
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Op Title</label>
-
-                <input type="text" id="event-title" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand text-sm">
-
-            </div>
-
-            <div>
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Target Date</label>
-
-                <input type="date" id="event-date" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand text-sm">
-
-            </div>
-
-            <div>
-
-                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Photo Batch (Multiple)</label>
-
-                <input type="file" id="event-photos" multiple accept="image/*" class="text-xs font-bold text-slate-500 w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-brand hover:file:bg-slate-200">
-
-            </div>
-
-            <button type="submit" class="w-full bg-brand text-white py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl">Initialize Op</button>
-
-        </form>
+      </button>
 
     </div>
+
+    <form id="form-event" onsubmit="handleSave(event, 'events')" class="p-6 sm:p-8 space-y-6" enctype="multipart/form-data">
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Op Title</label>
+
+        <input type="text" id="event-title" required
+
+               class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand text-sm">
+
+      </div>
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">
+
+          Target Date <span class="text-accent">*</span>
+
+        </label>
+
+        <input type="date" id="event-date" required
+
+               class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-brand text-sm">
+
+      </div>
+
+      <div>
+
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Photo Batch (Multiple)</label>
+
+        <input type="file" id="event-photos" multiple accept="image/*"
+
+               class="text-xs font-bold text-slate-500 w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-brand hover:file:bg-slate-200">
+
+      </div>
+
+      <button type="submit"
+
+              class="w-full bg-brand text-white py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl">
+
+        Initialize Op
+
+      </button>
+
+    </form>
+
+  </div>
 
 </div>
 
 
+
+<!-- ==========================================
+
+     JAVASCRIPT
+
+=========================================== -->
 
 <script>
 
@@ -484,81 +732,65 @@
 
 // ==========================================
 
-const API = 'https://admin.mendekalemass.ac.ug/api';
+const API        = 'https://admin.mendekalemass.ac.ug/api';
 
-let currentSiteId = null;
+let currentSiteId   = null;
 
-let currentSiteName = "";
+let currentSiteName = '';
 
-let state = { sites: [], news: [], categories: [], events: [] };
+let editingId       = null;
 
-let editingId = null; 
+let state           = { sites: [], news: [], categories: [], events: [] };
 
 
 
 // ==========================================
 
-// API ENGINE & LOADERS
+// HELPERS
 
 // ==========================================
 
-async function apiCall(endpoint, method = 'GET', body = null, isFile = false) {
 
-    const loader = document.getElementById('global-loader');
 
-    loader.style.width = '30%';
+/** Zero-pad a number to 2 digits */
 
-    
-
-    try {
-
-        const options = { method, headers: { 'Accept': 'application/json' } };
-
-        if (body) {
-
-            if (isFile) options.body = body;
-
-            else {
-
-                options.headers['Content-Type'] = 'application/json';
-
-                options.body = JSON.stringify(body);
-
-            }
-
-        }
+const pad = n => String(n).padStart(2, '0');
 
 
 
-        const res = await fetch(`${API}${endpoint}`, options);
+/** Return current datetime string formatted for <input type="datetime-local"> */
 
-        loader.style.width = '100%';
+function nowLocalDatetime() {
 
-        
+    const d = new Date();
 
-        if (!res.ok) {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
-            const err = await res.json();
+}
 
-            throw new Error(err.message || 'Transmission Interrupted');
 
-        }
 
-        
+/** Return today's date string formatted for <input type="date"> */
 
-        setTimeout(() => loader.style.width = '0%', 400);
+function todayDate() {
 
-        return await res.json();
+    const d = new Date();
 
-    } catch (e) {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-        showToast(e.message, 'error');
+}
 
-        loader.style.width = '0%';
 
-        throw e;
 
-    }
+/** Parse a UTC/ISO datetime string into a local datetime-local value */
+
+function toLocalDatetimeInput(isoString) {
+
+    const d = new Date(isoString);
+
+    if (isNaN(d)) return '';
+
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 }
 
@@ -566,7 +798,114 @@ async function apiCall(endpoint, method = 'GET', body = null, isFile = false) {
 
 // ==========================================
 
-// SITE HUB LOGIC
+// API ENGINE
+
+// ==========================================
+// ==========================================
+// LOADING SYSTEM
+// ==========================================
+
+function showLoader(title = 'Processing', text = 'Syncing with server...') {
+
+    document.getElementById('loader-title').textContent = title;
+    document.getElementById('loader-text').textContent  = text;
+
+    document.getElementById('screen-loader')
+        .classList.add('active');
+}
+
+function hideLoader() {
+
+    document.getElementById('screen-loader')
+        .classList.remove('active');
+}
+
+function setButtonLoading(button, loadingText = 'Processing...') {
+
+    button.dataset.original = button.innerHTML;
+
+    button.innerHTML = loadingText;
+    button.classList.add('btn-loading');
+    button.disabled = true;
+}
+
+function resetButton(button) {
+
+    if (button.dataset.original) {
+        button.innerHTML = button.dataset.original;
+    }
+
+    button.classList.remove('btn-loading');
+    button.disabled = false;
+}
+
+
+async function apiCall(endpoint, method = 'GET', body = null, isFile = false) {
+
+    const loader = document.getElementById('global-loader');
+
+    try {
+
+        loader.style.width = '15%';
+
+        const options = {
+            method,
+            headers: { 'Accept': 'application/json' }
+        };
+
+        if (body) {
+
+            if (isFile) {
+
+                options.body = body;
+
+            } else {
+
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
+        }
+
+        loader.style.width = '45%';
+
+        const res = await fetch(`${API}${endpoint}`, options);
+
+        loader.style.width = '85%';
+
+        if (!res.ok) {
+
+            const err = await res.json().catch(() => ({}));
+
+            throw new Error(
+                err.message || 'Transmission Interrupted'
+            );
+        }
+
+        const data = await res.json();
+
+        loader.style.width = '100%';
+
+        setTimeout(() => {
+            loader.style.width = '0%';
+        }, 500);
+
+        return data;
+
+    } 
+    catch (e) {
+        hideLoader();
+        resetButton(submitBtn);
+        loader.style.width = '0%';
+
+        throw e;
+    }
+}
+
+
+
+// ==========================================
+
+// SITE MANAGEMENT
 
 // ==========================================
 
@@ -574,9 +913,9 @@ async function loadSites() {
 
     state.sites = await apiCall('/sites');
 
-    const container = document.getElementById('list-sites');
 
-    container.innerHTML = state.sites.map(s => `
+
+    document.getElementById('list-sites').innerHTML = state.sites.map(s => `
 
         <div class="bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:border-gold hover:shadow-2xl transition-all group relative overflow-hidden flex flex-col justify-between">
 
@@ -586,11 +925,25 @@ async function loadSites() {
 
             <div class="flex gap-2 relative z-10">
 
-                <button onclick="enterSite(${s.id}, '${s.name}')" class="flex-1 bg-brand text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-accent transition-all">Secure Login</button>
+                <button onclick="enterSite(${s.id}, '${escHtml(s.name)}')"
 
-                <button onclick="openModal('site', ${s.id})" class="p-3 text-slate-300 hover:text-brand"><i class="fa-solid fa-sliders"></i></button>
+                        class="flex-1 bg-brand text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-accent transition-all">
 
-                <button onclick="handleDelete('sites', ${s.id})" class="p-3 text-slate-300 hover:text-accent"><i class="fa-solid fa-trash-can"></i></button>
+                    Secure Login
+
+                </button>
+
+                <button onclick="openModal('site', ${s.id})" class="p-3 text-slate-300 hover:text-brand">
+
+                    <i class="fa-solid fa-sliders"></i>
+
+                </button>
+
+                <button onclick="handleDelete('sites', ${s.id})" class="p-3 text-slate-300 hover:text-accent">
+
+                    <i class="fa-solid fa-trash-can"></i>
+
+                </button>
 
             </div>
 
@@ -604,9 +957,11 @@ async function loadSites() {
 
 function enterSite(id, name) {
 
-    currentSiteId = id;
+    currentSiteId   = id;
 
     currentSiteName = name;
+
+
 
     document.getElementById('active-site-name').textContent = name;
 
@@ -614,11 +969,15 @@ function enterSite(id, name) {
 
     document.getElementById('btn-exit').classList.remove('hidden');
 
-    document.getElementById('content-tabs').classList.remove('hidden');
 
-    document.getElementById('content-tabs').classList.add('flex');
 
-    
+    const ct = document.getElementById('content-tabs');
+
+    ct.classList.remove('hidden');
+
+    ct.classList.add('flex');
+
+
 
     switchTab('news');
 
@@ -628,13 +987,19 @@ function enterSite(id, name) {
 
 function exitSite() {
 
-    currentSiteId = null;
+    currentSiteId   = null;
+
+    currentSiteName = '';
+
+
 
     document.getElementById('site-display').classList.add('hidden');
 
     document.getElementById('btn-exit').classList.add('hidden');
 
     document.getElementById('content-tabs').classList.add('hidden');
+
+
 
     switchTab('sites');
 
@@ -644,11 +1009,13 @@ function exitSite() {
 
 // ==========================================
 
-// NAVIGATION & SCOPED CONTENT
+// TAB NAVIGATION
 
 // ==========================================
 
 function switchTab(tab) {
+
+    // Hide all views
 
     document.querySelectorAll('main > div').forEach(v => v.classList.add('hidden'));
 
@@ -656,7 +1023,9 @@ function switchTab(tab) {
 
 
 
-    document.querySelectorAll('header button').forEach(b => b.classList.remove('tab-active'));
+    // Reset tab styles
+
+    document.querySelectorAll('header button[id^="tab-"]').forEach(b => b.classList.remove('tab-active'));
 
     document.getElementById(`tab-${tab}`).classList.add('tab-active');
 
@@ -669,6 +1038,8 @@ function switchTab(tab) {
     } else if (currentSiteId) {
 
         if (tab === 'news') {
+
+            // Load categories first so the select is populated before the news modal opens
 
             loadContent('categories').then(() => loadContent('news'));
 
@@ -684,11 +1055,15 @@ function switchTab(tab) {
 
 
 
+// ==========================================
+
+// CONTENT LOADING & RENDERING
+
+// ==========================================
+
 async function loadContent(type) {
 
-    const endpoint = `/${type}?site_id=${currentSiteId}`;
-
-    const data = await apiCall(endpoint);
+    const data  = await apiCall(`/${type}?site_id=${currentSiteId}`);
 
     state[type] = data.filter(item => item.site_id == currentSiteId);
 
@@ -702,9 +1077,17 @@ function renderContent(type) {
 
     const container = document.getElementById(`list-${type}`);
 
-    
+
 
     if (type === 'news') {
+
+        const count = state.news.length;
+
+        document.getElementById('news-status').textContent =
+
+            count === 0 ? 'No reports filed' : `${count} report${count > 1 ? 's' : ''} on record`;
+
+
 
         container.innerHTML = state.news.map(a => `
 
@@ -712,7 +1095,11 @@ function renderContent(type) {
 
                 <div class="w-full sm:w-20 h-40 sm:h-20 bg-slate-100 rounded-xl overflow-hidden shrink-0 border border-slate-100">
 
-                    <img src="${a.image || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/150?text=NO+IMAGE'">
+                    <img src="${a.image || ''}" alt=""
+
+                         class="w-full h-full object-cover"
+
+                         onerror="this.src='https://via.placeholder.com/150?text=NO+IMAGE'">
 
                 </div>
 
@@ -720,23 +1107,47 @@ function renderContent(type) {
 
                     <div class="flex flex-wrap items-center gap-2 mb-1">
 
-                        <span class="text-[9px] font-black bg-gold/20 text-brand px-2 py-0.5 rounded uppercase tracking-widest">${a.category?.name || 'Unset'}</span>
+                        <span class="text-[9px] font-black bg-gold/20 text-brand px-2 py-0.5 rounded uppercase tracking-widest">
 
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">${new Date(a.created_at).toLocaleDateString()}</span>
+                            ${escHtml(a.category?.name || 'Unset')}
+
+                        </span>
+
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+
+                            ${new Date(a.created_at).toLocaleString()}
+
+                        </span>
 
                     </div>
 
-                    <h4 class="font-black text-brand uppercase tracking-tighter text-base sm:text-lg leading-snug break-words">${a.title}</h4>
+                    <h4 class="font-black text-brand uppercase tracking-tighter text-base sm:text-lg leading-snug break-words">
 
-                    <p class="text-xs text-slate-400 font-bold uppercase mt-1 italic">Source: ${a.author}</p>
+                        ${escHtml(a.title)}
+
+                    </h4>
+
+                    <p class="text-xs text-slate-400 font-bold uppercase mt-1 italic">Source: ${escHtml(a.author)}</p>
 
                 </div>
 
                 <div class="flex sm:flex-col md:flex-row gap-2 justify-end pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
 
-                    <button onclick="openModal('news', ${a.id})" class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-brand hover:text-white transition-all flex items-center justify-center"><i class="fa-solid fa-pen-nib text-xs"></i></button>
+                    <button onclick="openModal('news', ${a.id})"
 
-                    <button onclick="handleDelete('news', ${a.id})" class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-accent hover:text-white transition-all flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+                            class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-brand hover:text-white transition-all flex items-center justify-center">
+
+                        <i class="fa-solid fa-pen-nib text-xs"></i>
+
+                    </button>
+
+                    <button onclick="handleDelete('news', ${a.id})"
+
+                            class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-accent hover:text-white transition-all flex items-center justify-center">
+
+                        <i class="fa-solid fa-trash text-xs"></i>
+
+                    </button>
 
                 </div>
 
@@ -754,13 +1165,23 @@ function renderContent(type) {
 
             <div class="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center gap-2 group">
 
-                <span class="font-black text-xs uppercase tracking-widest text-brand truncate">${c.name}</span>
+                <span class="font-black text-xs uppercase tracking-widest text-brand truncate">${escHtml(c.name)}</span>
 
                 <div class="flex gap-2 shrink-0">
 
-                    <button onclick="openModal('category', ${c.id})" class="text-slate-300 hover:text-brand transition-all"><i class="fa-solid fa-pen text-xs"></i></button>
+                    <button onclick="openModal('category', ${c.id})" class="text-slate-300 hover:text-brand transition-all">
 
-                    <button onclick="handleDelete('categories', ${c.id})" class="text-slate-200 hover:text-accent sm:opacity-0 group-hover:opacity-100 transition-all"><i class="fa-solid fa-circle-minus text-xs"></i></button>
+                        <i class="fa-solid fa-pen text-xs"></i>
+
+                    </button>
+
+                    <button onclick="handleDelete('categories', ${c.id})"
+
+                            class="text-slate-200 hover:text-accent sm:opacity-0 group-hover:opacity-100 transition-all">
+
+                        <i class="fa-solid fa-circle-minus text-xs"></i>
+
+                    </button>
 
                 </div>
 
@@ -780,11 +1201,19 @@ function renderContent(type) {
 
                 <div class="h-48 bg-slate-900 relative shrink-0">
 
-                    <img src="${e.photos[0]?.photo || 'https://via.placeholder.com/400x200'}" class="w-full h-full object-cover opacity-60">
+                    <img src="${e.photos[0]?.photo || ''}" alt=""
+
+                         class="w-full h-full object-cover opacity-60"
+
+                         onerror="this.src='https://via.placeholder.com/400x200?text=NO+PHOTO'">
 
                     <div class="absolute inset-0 flex items-center justify-center">
 
-                        <span class="bg-gold text-brand px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">${e.photos.length} Captured Frames</span>
+                        <span class="bg-gold text-brand px-4 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">
+
+                            ${e.photos.length} Captured Frame${e.photos.length !== 1 ? 's' : ''}
+
+                        </span>
 
                     </div>
 
@@ -794,13 +1223,23 @@ function renderContent(type) {
 
                     <div class="min-w-0">
 
-                        <h4 class="font-black text-brand uppercase tracking-tighter truncate">${e.title}</h4>
+                        <h4 class="font-black text-brand uppercase tracking-tighter truncate">${escHtml(e.title)}</h4>
 
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">${new Date(e.event_date).toDateString()}</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">
+
+                            ${new Date(e.event_date || e.created_at).toDateString()}
+
+                        </p>
 
                     </div>
 
-                    <button onclick="handleDelete('events', ${e.id})" class="text-slate-300 hover:text-accent transition-colors shrink-0"><i class="fa-solid fa-trash-can text-lg"></i></button>
+                    <button onclick="handleDelete('events', ${e.id})"
+
+                            class="text-slate-300 hover:text-accent transition-colors shrink-0">
+
+                        <i class="fa-solid fa-trash-can text-lg"></i>
+
+                    </button>
 
                 </div>
 
@@ -816,91 +1255,127 @@ function renderContent(type) {
 
 // ==========================================
 
-// MODAL & FORM HANDLING
+// MODAL HANDLING
 
 // ==========================================
 
 function openModal(type, id = null) {
 
-    const modal = document.getElementById(`modal-${type}`);
-
-    const form = document.getElementById(`form-${type}`);
-
-    form.reset();
-
-    editingId = id; 
+    editingId = id;
 
 
 
-    if (id) {
+    // Reset the matching form
 
-        const item = state[type === 'site' ? 'sites' : (type === 'news' ? 'news' : (type === 'category' ? 'categories' : 'events'))].find(x => x.id === id);
+    const formMap = { site: 'form-site', news: 'form-news', category: 'form-category', event: 'form-event' };
 
-        
+    document.getElementById(formMap[type]).reset();
 
-        if (type === 'site') {
 
-            document.getElementById('site-id').value = item.id;
+
+    // ---- Site ----
+
+    if (type === 'site') {
+
+        if (id) {
+
+            const item = state.sites.find(x => x.id === id);
+
+            document.getElementById('site-id').value   = item.id;
 
             document.getElementById('site-name').value = item.name;
 
-        } else if (type === 'news') {
+        } else {
 
-            document.getElementById('news-id').value = item.id;
-
-            document.getElementById('news-title').value = item.title;
-
-            document.getElementById('news-author').value = item.author;
-
-            document.getElementById('news-lede').value = item.lede;
-
-            document.getElementById('news-body').value = item.body;
-
-            document.getElementById('news-cat').value = item.category_id;
-
-            
-
-            if (item.created_at) {
-
-                const dateObj = new Date(item.created_at);
-
-                if (!isNaN(dateObj)) {
-
-                    const formattedDate = dateObj.toISOString().slice(0, 16);
-
-                    document.getElementById('news-date').value = formattedDate;
-
-                }
-
-            }
-
-        } else if (type === 'category') {
-
-             document.getElementById('cat-name').value = item.name;
+            document.getElementById('site-id').value = '';
 
         }
 
     }
 
 
+
+    // ---- News ----
 
     if (type === 'news') {
 
-        const sel = document.getElementById('news-cat');
+        // Populate sector select filtered to current site
+
+        const sel         = document.getElementById('news-cat');
 
         const siteSectors = state.categories.filter(c => c.site_id == currentSiteId);
 
-        sel.innerHTML = siteSectors.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        sel.innerHTML     = siteSectors.length
 
-        if (siteSectors.length === 0) {
+            ? siteSectors.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('')
 
-            sel.innerHTML = `<option value="">No sectors found. Create one first.</option>`;
+            : `<option value="">No sectors found — create one first.</option>`;
+
+
+
+        if (id) {
+
+            // Editing existing article
+
+            const item = state.news.find(x => x.id === id);
+
+            document.getElementById('news-id').value     = item.id;
+
+            document.getElementById('news-title').value  = item.title;
+
+            document.getElementById('news-author').value = item.author;
+
+            document.getElementById('news-lede').value   = item.lede;
+
+            document.getElementById('news-body').value   = item.body;
+
+            document.getElementById('news-cat').value    = item.category_id;
+
+            // Pre-fill publish date from stored created_at
+
+            document.getElementById('news-date').value   = toLocalDatetimeInput(item.created_at);
+
+        } else {
+
+            // New article — default publish date to right now
+
+            document.getElementById('news-id').value   = '';
+
+            document.getElementById('news-date').value = nowLocalDatetime();
 
         }
 
     }
 
 
+
+    // ---- Category ----
+
+    if (type === 'category' && id) {
+
+        const item = state.categories.find(x => x.id === id);
+
+        document.getElementById('cat-name').value = item.name;
+
+    }
+
+
+
+    // ---- Event ----
+
+    if (type === 'event') {
+
+        // Default event date to today
+
+        document.getElementById('event-date').value = todayDate();
+
+    }
+
+
+
+    // Show modal
+
+    const modal = document.getElementById(`modal-${type}`);
 
     modal.classList.remove('hidden');
 
@@ -924,149 +1399,301 @@ function closeModals() {
 
 
 
+// ==========================================
+
+// SAVE HANDLER
+
+// ==========================================
+
 async function handleSave(e, type) {
+
+
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+
+setButtonLoading(submitBtn, 'Transmitting...');
+showLoader('Processing Request', 'Saving data to server...');
 
     e.preventDefault();
 
-    const formData = new FormData();
 
-    let endpoint = `/${type === 'news' ? 'news' : type === 'categories' ? 'categories' : type}`;
 
-    
+    try {
 
-    if (type === 'sites') {
+        if (type === 'sites') {
 
-        const siteId = document.getElementById('site-id').value;
+            const siteId  = document.getElementById('site-id').value;
 
-        const payload = { name: document.getElementById('site-name').value };
+            const payload = { name: document.getElementById('site-name').value };
 
-        await apiCall(siteId ? `${endpoint}/${siteId}` : endpoint, 'POST', payload);
+            const url     = siteId ? `/sites/${siteId}` : '/sites';
 
-    } 
-
-    else if (type === 'news') {
-
-        const newsId = document.getElementById('news-id').value;
-
-        formData.append('site_id', currentSiteId);
-
-        formData.append('title', document.getElementById('news-title').value);
-
-        formData.append('author', document.getElementById('news-author').value);
-
-        formData.append('category', document.getElementById('news-cat').selectedOptions[0].text);
-
-        formData.append('lede', document.getElementById('news-lede').value);
-
-        formData.append('body', document.getElementById('news-body').value);
-
-        
-
-        const newsDate = document.getElementById('news-date').value;
-
-        if (newsDate) {
-
-            formData.append('created_at', newsDate);
+            await apiCall(url, 'POST', payload);
 
         }
 
-        
 
-        const img = document.getElementById('news-image').files[0];
 
-        if (img) formData.append('image', img);
+        else if (type === 'news') {
 
-        
+            const newsId   = document.getElementById('news-id').value;
 
-        await apiCall(newsId ? `${endpoint}/${newsId}` : endpoint, 'POST', formData, true);
+            const formData = new FormData();
 
-    }
 
-    else if (type === 'categories') {
 
-        const payload = { site_id: currentSiteId, name: document.getElementById('cat-name').value };
+            formData.append('site_id',    currentSiteId);
 
-        const url = editingId ? `${endpoint}/${editingId}` : endpoint;
+            formData.append('title',      document.getElementById('news-title').value);
 
-        await apiCall(url, 'POST', payload);
+            formData.append('author',     document.getElementById('news-author').value);
 
-    }
+            formData.append('lede',       document.getElementById('news-lede').value);
 
-    else if (type === 'events') {
+            formData.append('body',       document.getElementById('news-body').value);
 
-        formData.append('site_id', currentSiteId);
+            formData.append('created_at', document.getElementById('news-date').value);
 
-        formData.append('title', document.getElementById('event-title').value);
 
-        formData.append('event_date', document.getElementById('event-date').value);
 
-        const photos = document.getElementById('event-photos').files;
+            // Send category name so the backend can firstOrCreate
 
-        for (let i = 0; i < photos.length; i++) {
+            const catSelect = document.getElementById('news-cat');
 
-            formData.append('photos[]', photos[i]);
+            if (catSelect.selectedOptions.length) {
+
+                formData.append('category', catSelect.selectedOptions[0].text);
+
+            }
+
+
+
+            const img = document.getElementById('news-image').files[0];
+
+            if (img) formData.append('image', img);
+
+
+
+            const url = newsId ? `/news/${newsId}` : '/news';
+
+            await apiCall(url, 'POST', formData, true);
 
         }
 
-        await apiCall('/events', 'POST', formData, true);
+
+
+        else if (type === 'categories') {
+
+            const payload = { site_id: currentSiteId, name: document.getElementById('cat-name').value };
+
+            const url     = editingId ? `/categories/${editingId}` : '/categories';
+
+            await apiCall(url, 'POST', payload);
+
+        }
+
+
+
+        else if (type === 'events') {
+
+            const formData = new FormData();
+
+            formData.append('site_id',    currentSiteId);
+
+            formData.append('title',      document.getElementById('event-title').value);
+
+            formData.append('event_date', document.getElementById('event-date').value);
+
+
+
+            const photos = document.getElementById('event-photos').files;
+
+            for (let i = 0; i < photos.length; i++) {
+
+                formData.append('photos[]', photos[i]);
+
+            }
+
+
+
+            await apiCall('/events', 'POST', formData, true);
+
+        }
+
+
+
+        closeModals();
+
+        showToast('System Synced Successfully');
+
+
+        hideLoader();
+        resetButton(submitBtn);
+
+
+
+        // Reload the relevant view
+
+        if (type === 'sites')      loadSites();
+
+        else if (type === 'news')  switchTab('news');
+
+        else if (type === 'categories') loadContent('categories');
+
+        else if (type === 'events')     loadContent('events');
+
+
+
+    } catch (_) {
+
+        // Error already displayed by apiCall
 
     }
-
-
-
-    closeModals();
-
-    showToast("System Synced Successfully");
-
-    if (type === 'sites') loadSites(); else switchTab(type === 'categories' ? 'categories' : (type === 'news' ? 'news' : 'events'));
 
 }
 
 
+
+// ==========================================
+
+// DELETE HANDLER
+
+// ==========================================
 
 async function handleDelete(type, id) {
 
-    if (!confirm("Confirm intel purge from database? This action is irreversible.")) return;
+    if (!confirm('Confirm intel purge from database? This action is irreversible.')) return;
 
-    const endpoint = `/${type === 'news' ? 'news' : type === 'categories' ? 'categories' : type}/${id}`;
+    showLoader(
+        'Deleting Record',
+        'Purging data from database...'
+    );
 
-    await apiCall(endpoint, 'DELETE');
+    try {
 
-    showToast("Data Purged", 'error');
+        const endpointMap = {
+            sites: 'sites',
+            news: 'news',
+            categories: 'categories',
+            events: 'events'
+        };
 
-    if (type === 'sites') loadSites(); else loadContent(type);
+        await apiCall(`/${endpointMap[type]}/${id}`, 'DELETE');
 
+        showToast('Data Purged', 'error');
+
+        if (type === 'sites') {
+            loadSites();
+        } else {
+            loadContent(type);
+        }
+
+    } catch (e) {
+
+        showToast(e.message, 'error');
+
+    } finally {
+
+        hideLoader();
+    }
 }
 
 
+// ==========================================
 
-// Helper: Toast
+// TOAST NOTIFICATIONS
+
+// ==========================================
 
 function showToast(msg, type = 'success') {
 
     const container = document.getElementById('toast-container');
 
-    const t = document.createElement('div');
+    const t         = document.createElement('div');
 
-    t.className = `${type === 'success' ? 'bg-brand text-gold' : 'bg-accent text-white'} px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl shadow-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-3 transition-all duration-500`;
+    const isSuccess = type === 'success';
 
-    t.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} text-lg"></i> ${msg}`;
+
+
+    t.className = `${isSuccess ? 'bg-brand text-gold' : 'bg-accent text-white'} px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl shadow-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-3 transition-all duration-500`;
+
+    t.innerHTML = `<i class="fa-solid ${isSuccess ? 'fa-circle-check' : 'fa-triangle-exclamation'} text-lg"></i> ${escHtml(msg)}`;
+
+
 
     container.appendChild(t);
 
-    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(20px)'; setTimeout(() => t.remove(), 500); }, 3000);
+
+
+    setTimeout(() => {
+
+        t.style.opacity   = '0';
+
+        t.style.transform = 'translateY(20px)';
+
+        setTimeout(() => t.remove(), 500);
+
+    }, 3000);
 
 }
 
 
 
-// Initial Launch
+// ==========================================
+
+// SECURITY HELPER
+
+// ==========================================
+
+function escHtml(str) {
+
+    if (str == null) return '';
+
+    return String(str)
+
+        .replace(/&/g, '&amp;')
+
+        .replace(/</g, '&lt;')
+
+        .replace(/>/g, '&gt;')
+
+        .replace(/"/g, '&quot;')
+
+        .replace(/'/g, '&#39;');
+
+}
+
+
+
+// ==========================================
+
+// BOOT
+
+// ==========================================
 
 loadSites();
 
-
-
 </script>
+
+<!-- FULLSCREEN LOADER -->
+<div id="screen-loader" class="screen-loader">
+
+  <div class="loader-box">
+
+    <div class="loader-spinner"></div>
+
+    <h3 id="loader-title"
+        class="font-black text-brand uppercase tracking-widest text-sm mb-2">
+      Processing
+    </h3>
+
+    <p id="loader-text"
+       class="text-slate-500 text-xs font-bold uppercase tracking-wider">
+      Syncing with server...
+    </p>
+
+  </div>
+
+</div>
 
 </body>
 
