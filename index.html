@@ -40,6 +40,226 @@
   .prose strong, .prose b { color: #111827; }
   .prose a { color: #B84A2E; text-decoration: underline; }
   .prose h2, .prose h3 { font-size: 1.5rem; font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; color: #111827; }
+
+  /* ==========================================
+     PHOTO STRIP (FILMSTRIP GALLERY)
+  ========================================== */
+
+  .photo-strip{
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    padding-bottom:6px;
+  }
+
+  .photo-strip::-webkit-scrollbar{ height:6px; }
+  .photo-strip::-webkit-scrollbar-thumb{ background:#e7dcd6; border-radius:99px; }
+  .photo-strip::-webkit-scrollbar-track{ background:transparent; }
+
+  .photo-strip-item{
+    scroll-snap-align:start;
+    flex:0 0 auto;
+    width:220px;
+    height:150px;
+    border-radius:10px;
+    overflow:hidden;
+    position:relative;
+    cursor:pointer;
+    border:1px solid #eee1db;
+    background:#111;
+  }
+
+  .photo-strip-item img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transition:transform .5s ease;
+  }
+
+  .photo-strip-item:hover img{
+    transform:scale(1.06);
+  }
+
+  .photo-strip-item .strip-index{
+    position:absolute;
+    left:8px;
+    bottom:8px;
+    background:rgba(17,17,17,.65);
+    color:#fff;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    padding:3px 8px;
+    border-radius:99px;
+  }
+
+  .photo-strip-item .strip-zoom{
+    position:absolute;
+    top:8px;
+    right:8px;
+    width:26px;
+    height:26px;
+    border-radius:99px;
+    background:rgba(255,255,255,.9);
+    color:#B84A2E;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+
+  .photo-strip-item:hover .strip-zoom{ opacity:1; }
+
+  /* ==========================================
+     GALLERY VIEWER (slide-panel style, distinct from strip)
+  ========================================== */
+
+  #gallery-viewer{
+    position:fixed;
+    inset:0;
+    z-index:300;
+    display:none;
+    background:rgba(17,10,8,.92);
+  }
+
+  #gallery-viewer.active{
+    display:flex;
+    flex-direction:column;
+    animation:panelIn .3s ease-out;
+  }
+
+  @keyframes panelIn{
+    from{ opacity:0; }
+    to{ opacity:1; }
+  }
+
+  .gv-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 22px;
+    color:#f4ece7;
+  }
+
+  .gv-stage{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    padding:0 20px;
+    min-height:0;
+    overflow:hidden;
+    touch-action:pan-y;
+  }
+
+  .gv-stage img{
+    max-width:min(88vw, 1000px);
+    max-height:64vh;
+    object-fit:contain;
+    border-radius:6px;
+    box-shadow:0 25px 60px -15px rgba(0,0,0,.6);
+    cursor:grab;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+
+  .gv-stage img:active{
+    cursor:grabbing;
+  }
+
+  .gv-hint{
+    position:absolute;
+    bottom:14px;
+    left:50%;
+    transform:translateX(-50%);
+    color:rgba(244,236,231,.75);
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    pointer-events:none;
+    animation:hintFade 2.6s ease forwards;
+  }
+
+  @keyframes hintFade{
+    0%{ opacity:0; transform:translate(-50%, 6px); }
+    15%{ opacity:1; transform:translate(-50%, 0); }
+    75%{ opacity:1; }
+    100%{ opacity:0; }
+  }
+
+  .gv-hint i{ animation:hintSwipe 1.4s ease-in-out infinite; }
+
+  @keyframes hintSwipe{
+    0%,100%{ transform:translateX(0); }
+    50%{ transform:translateX(6px); }
+  }
+
+  .gv-arrow{
+    width:44px;
+    height:44px;
+    border-radius:99px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.18);
+    color:#f4ece7;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+    flex-shrink:0;
+    transition:background .2s ease, color .2s ease;
+  }
+
+  .gv-arrow:hover{
+    background:#B84A2E;
+    border-color:#B84A2E;
+    color:#fff;
+  }
+
+  .gv-rail{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    padding:16px 22px 22px;
+    justify-content:center;
+  }
+
+  .gv-rail-thumb{
+    flex:0 0 auto;
+    width:64px;
+    height:64px;
+    border-radius:8px;
+    overflow:hidden;
+    cursor:pointer;
+    opacity:.45;
+    border:2px solid transparent;
+    transition:opacity .2s ease, border-color .2s ease;
+  }
+
+  .gv-rail-thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  .gv-rail-thumb.active{
+    opacity:1;
+    border-color:#B84A2E;
+  }
+
+  @media (max-width:640px){
+    .gv-rail-thumb{ width:46px; height:46px; }
+    .gv-rail{ padding:12px 14px 16px; gap:8px; }
+    .gv-topbar{ padding:14px 16px; }
+  }
 </style>
 </head>
 <body class="bg-white text-gray-900 font-sans antialiased flex flex-col min-h-screen">
@@ -167,6 +387,27 @@
   </div>
 </main>
 
+<!-- GALLERY VIEWER (slide panel, distinct from the filmstrip) -->
+<div id="gallery-viewer">
+
+  <div class="gv-topbar">
+    <span id="gv-counter" class="text-xs font-bold uppercase tracking-widest text-brand-light/80"></span>
+    <button onclick="closeGallery()" class="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center hover:bg-brand hover:border-brand transition-colors">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <div class="gv-stage" id="gv-stage">
+    <button class="gv-arrow absolute left-3 md:left-8 hidden sm:flex" onclick="shiftGallery(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+    <img id="gv-image" src="" alt="">
+    <button class="gv-arrow absolute right-3 md:right-8 hidden sm:flex" onclick="shiftGallery(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    <div id="gv-hint-slot"></div>
+  </div>
+
+  <div id="gv-rail" class="gv-rail"></div>
+
+</div>
+
 <!-- RESTORED ORIGINAL FOOTER -->
 <footer class="bg-slate-900 text-slate-300 pt-16 pb-24 xl:pb-8 border-t-4 border-brand mt-auto relative z-10">
   <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-10 mb-12">
@@ -212,6 +453,10 @@ document.getElementById('nav-date').textContent = new Date().toLocaleDateString(
 let articles = [];
 let prevPage = 'home';
 
+// Gallery viewer state
+let galleryImages = [];
+let galleryIndex = 0;
+
 // --- DATA FETCHING ---
 async function fetchNewsData() {
   try {
@@ -240,14 +485,21 @@ async function fetchNewsData() {
     }
 
     articles = rawData.map(item => {
-      let img = item.image || '';
-      if (img && !img.startsWith('http')) img = BASE_DOMAIN + (img.startsWith('/') ? '' : '/') + img;
+      const rawImages = (Array.isArray(item.images) && item.images.length)
+        ? item.images
+        : (item.image ? [item.image] : []);
+
+      const images = rawImages
+        .filter(Boolean)
+        .map(img => img.startsWith('http') ? img : BASE_DOMAIN + (img.startsWith('/') ? '' : '/') + img);
+
       return {
         id: Number(item.id),
         title: item.title,
         cat: item.category ? item.category.name : 'News', 
         author: item.author || 'Staff Writer',
-        image: img,
+        image: images[0] || '',
+        images: images,
         lede: item.lede || '',
         body: item.body || item.lede || '',
         date: item.created_at ? new Date(item.created_at) : new Date()
@@ -649,14 +901,54 @@ function readArticle(id, updateUrl = true) {
   document.getElementById('full-date').innerHTML =
     `<i class="fa-regular fa-clock"></i> ${a.date.toLocaleDateString()}`;
 
-  document.getElementById('full-image-container').innerHTML = a.image
-    ? `<img src="${a.image}" alt="${a.title}" class="w-full max-h-[500px] object-cover">`
+  const images = (a.images && a.images.length) ? a.images : (a.image ? [a.image] : []);
+
+  document.getElementById('full-image-container').innerHTML = images.length
+    ? `
+      <div class="relative cursor-pointer" onclick="openGallery(${a.id}, 0)">
+        <img src="${images[0]}" alt="${a.title}" class="w-full max-h-[500px] object-cover">
+        ${images.length > 1 ? `
+          <div class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center gap-2">
+            <i class="fa-solid fa-images"></i> ${images.length} Photos
+          </div>
+        ` : ''}
+      </div>
+    `
     : '';
 
-  document.getElementById('full-body').innerHTML =
-    a.body.includes('<p>')
-      ? a.body
-      : a.body.split('\n\n').map(p => `<p>${p}</p>`).join('');
+  const extraImages = images.slice(1);
+
+  const stripHtml = extraImages.length ? `
+    <div class="not-prose my-8">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-2">
+          <i class="fa-solid fa-images text-brand"></i> More From This Story
+        </h4>
+        <span class="text-[11px] text-gray-400 font-semibold">Swipe to browse</span>
+      </div>
+      <div class="photo-strip">
+        ${extraImages.map((img, i) => `
+          <div class="photo-strip-item" onclick="openGallery(${a.id}, ${i + 1})">
+            <img src="${img}" alt="${a.title} photo ${i + 2}" loading="lazy">
+            <span class="strip-index">Photo ${i + 2}</span>
+            <span class="strip-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  // Split the body into paragraphs so the gallery can sit right after the lede
+  const rawParagraphs = a.body.includes('<p>')
+    ? a.body.match(/<p[^>]*>[\s\S]*?<\/p>/gi) || [a.body]
+    : a.body.split('\n\n').filter(p => p.trim()).map(p => `<p>${p}</p>`);
+
+  if (rawParagraphs.length > 1) {
+    document.getElementById('full-body').innerHTML =
+      rawParagraphs[0] + stripHtml + rawParagraphs.slice(1).join('');
+  } else {
+    document.getElementById('full-body').innerHTML = rawParagraphs[0] + stripHtml;
+  }
 
   // UPDATE URL
   if (updateUrl) {
@@ -666,6 +958,169 @@ function readArticle(id, updateUrl = true) {
 
   showPage('article');
 }
+
+// --- GALLERY VIEWER ---
+let galleryHasShownHint = false;
+let dragActive = false;
+let dragStartX = 0;
+let dragDeltaX = 0;
+
+function openGallery(articleId, index) {
+
+  const a = articles.find(x => String(x.id) === String(articleId));
+  if (!a) return;
+
+  galleryImages = (a.images && a.images.length) ? a.images : (a.image ? [a.image] : []);
+  if (!galleryImages.length) return;
+
+  galleryIndex = index || 0;
+
+  document.getElementById('gv-rail').innerHTML = galleryImages.map((img, i) => `
+    <div class="gv-rail-thumb${i === galleryIndex ? ' active' : ''}" onclick="event.stopPropagation(); jumpGallery(${i})">
+      <img src="${img}" alt="Thumbnail ${i + 1}">
+    </div>
+  `).join('');
+
+  renderGallery();
+
+  document.getElementById('gallery-viewer').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // Show a one-time swipe hint on touch devices
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  const hintSlot = document.getElementById('gv-hint-slot');
+  if (isTouch && galleryImages.length > 1 && !galleryHasShownHint) {
+    galleryHasShownHint = true;
+    hintSlot.innerHTML = `
+      <div class="gv-hint">
+        <i class="fa-solid fa-chevron-left"></i>
+        Swipe to browse
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
+    `;
+    setTimeout(() => { hintSlot.innerHTML = ''; }, 2700);
+  } else {
+    hintSlot.innerHTML = '';
+  }
+}
+
+function renderGallery() {
+  if (!galleryImages.length) return;
+
+  document.getElementById('gv-image').src = galleryImages[galleryIndex];
+  document.getElementById('gv-counter').textContent = `${galleryIndex + 1} / ${galleryImages.length}`;
+
+  document.querySelectorAll('.gv-rail-thumb').forEach((el, i) => {
+    el.classList.toggle('active', i === galleryIndex);
+  });
+}
+
+function shiftGallery(delta, viaSwipe = false) {
+  if (!galleryImages.length || galleryImages.length < 2) return;
+
+  const img = document.getElementById('gv-image');
+
+  if (viaSwipe) {
+    // Slide the current image out, then bring the new one in from the opposite side
+    img.style.transition = 'transform .22s ease, opacity .22s ease';
+    img.style.transform = `translateX(${delta > 0 ? '-40%' : '40%'})`;
+    img.style.opacity = '0';
+
+    setTimeout(() => {
+      galleryIndex = (galleryIndex + delta + galleryImages.length) % galleryImages.length;
+      img.style.transition = 'none';
+      img.style.transform = `translateX(${delta > 0 ? '40%' : '-40%'})`;
+      renderGallery();
+
+      requestAnimationFrame(() => {
+        img.style.transition = 'transform .22s ease, opacity .22s ease';
+        img.style.transform = 'translateX(0)';
+        img.style.opacity = '1';
+      });
+    }, 220);
+  } else {
+    galleryIndex = (galleryIndex + delta + galleryImages.length) % galleryImages.length;
+    renderGallery();
+  }
+}
+
+function jumpGallery(i) {
+  galleryIndex = i;
+  renderGallery();
+}
+
+function closeGallery() {
+  document.getElementById('gallery-viewer').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('gallery-viewer').classList.contains('active')) return;
+  if (e.key === 'Escape') closeGallery();
+  if (e.key === 'ArrowRight') shiftGallery(1, true);
+  if (e.key === 'ArrowLeft') shiftGallery(-1, true);
+});
+
+// --- SWIPE / DRAG GESTURES (pointer events cover touch, mouse & pen) ---
+function initGallerySwipe() {
+  const stage = document.getElementById('gv-stage');
+  const img = document.getElementById('gv-image');
+
+  stage.addEventListener('pointerdown', (e) => {
+    if (galleryImages.length < 2) return;
+    if (e.target.closest('.gv-arrow')) return;
+    dragActive = true;
+    dragStartX = e.clientX;
+    dragDeltaX = 0;
+    img.style.transition = 'none';
+    stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
+  });
+
+  stage.addEventListener('pointermove', (e) => {
+    if (!dragActive) return;
+    dragDeltaX = e.clientX - dragStartX;
+    img.style.transform = `translateX(${dragDeltaX}px)`;
+    img.style.opacity = String(Math.max(1 - Math.abs(dragDeltaX) / 600, 0.5));
+  });
+
+  const endDrag = () => {
+    if (!dragActive) return;
+    dragActive = false;
+
+    const threshold = 60;
+    img.style.transition = 'transform .22s ease, opacity .22s ease';
+
+    if (Math.abs(dragDeltaX) > threshold) {
+      const delta = dragDeltaX < 0 ? 1 : -1;
+      img.style.transform = `translateX(${delta > 0 ? '-40%' : '40%'})`;
+      img.style.opacity = '0';
+
+      setTimeout(() => {
+        galleryIndex = (galleryIndex + delta + galleryImages.length) % galleryImages.length;
+        img.style.transition = 'none';
+        img.style.transform = `translateX(${delta > 0 ? '40%' : '-40%'})`;
+        renderGallery();
+
+        requestAnimationFrame(() => {
+          img.style.transition = 'transform .22s ease, opacity .22s ease';
+          img.style.transform = 'translateX(0)';
+          img.style.opacity = '1';
+        });
+      }, 220);
+    } else {
+      img.style.transform = 'translateX(0)';
+      img.style.opacity = '1';
+    }
+
+    dragDeltaX = 0;
+  };
+
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('pointerleave', () => { if (dragActive) endDrag(); });
+}
+
+document.addEventListener('DOMContentLoaded', initGallerySwipe);
 
 
 function shareArticle() {
