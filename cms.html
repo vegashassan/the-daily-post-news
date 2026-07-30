@@ -273,7 +273,7 @@
         <i class="fa-solid fa-circle-xmark text-2xl"></i>
       </button>
     </div>
-    <form id="form-news" onsubmit="handleSave(event, 'news')" class="p-5 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+    <form id="form-news" onsubmit="handleSave(event, 'news')" enctype="multipart/form-data" class="p-5 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
       <input type="hidden" id="news-id">
 
       <!-- Title — full width -->
@@ -299,9 +299,18 @@
 
       <!-- Image -->
       <div>
-        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Visual Intel (Image)</label>
-        <input type="file" id="news-image" accept="image/*"
+        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Visual Intel (Images)</label>
+        <input type="file" id="news-image" multiple accept="image/*"
                class="text-xs font-bold text-slate-500 w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-brand hover:file:bg-slate-200">
+        <p class="mt-2 text-[10px] font-bold text-slate-400">Select one or more images, up to 15 MB each. The first image is used as the cover.</p>
+        <div id="selected-news-images" class="hidden mt-4">
+          <p class="mb-2 text-[10px] font-black uppercase text-slate-400">New Images</p>
+          <div id="selected-news-images-grid" class="grid grid-cols-3 gap-2"></div>
+        </div>
+        <div id="existing-news-images" class="hidden mt-4">
+          <p class="mb-2 text-[10px] font-black uppercase text-slate-400">Existing Images</p>
+          <div id="existing-news-images-grid" class="grid grid-cols-3 gap-2"></div>
+        </div>
       </div>
 
       <!-- Publish Date -->
@@ -423,6 +432,37 @@ let currentSiteId   = null;
 let currentSiteName = '';
 let editingId       = null;
 let state           = { sites: [], news: [], categories: [], events: [] };
+
+function renderSelectedNewsImages() {
+    const input   = document.getElementById('news-image');
+    const wrapper = document.getElementById('selected-news-images');
+    const grid    = document.getElementById('selected-news-images-grid');
+    const files   = Array.from(input.files);
+
+    grid.innerHTML = files.map((file, index) => `
+        <div class="relative aspect-square overflow-hidden rounded-xl border-2 border-slate-100 bg-slate-50">
+            <img src="${URL.createObjectURL(file)}" alt="New image ${index + 1}" class="h-full w-full object-cover">
+            <button type="button" onclick="removeSelectedNewsImage(${index})"
+                    class="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-lg"
+                    aria-label="Remove selected image">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `).join('');
+    wrapper.classList.toggle('hidden', files.length === 0);
+}
+
+function removeSelectedNewsImage(index) {
+    const input = document.getElementById('news-image');
+    const transfer = new DataTransfer();
+    Array.from(input.files).forEach((file, fileIndex) => {
+        if (fileIndex !== index) transfer.items.add(file);
+    });
+    input.files = transfer.files;
+    renderSelectedNewsImages();
+}
+
+document.getElementById('news-image').addEventListener('change', renderSelectedNewsImages);
 
 // ==========================================
 // HELPERS
@@ -716,6 +756,12 @@ function openModal(type, id = null) {
     if (type === 'news') {
         const sel         = document.getElementById('news-cat');
         const siteSectors = state.categories.filter(c => c.site_id == currentSiteId);
+        const imagePreview = document.getElementById('existing-news-images');
+        const imageGrid    = document.getElementById('existing-news-images-grid');
+        document.getElementById('selected-news-images').classList.add('hidden');
+        document.getElementById('selected-news-images-grid').innerHTML = '';
+        imagePreview.classList.add('hidden');
+        imageGrid.innerHTML = '';
         sel.innerHTML     = siteSectors.length
             ? siteSectors.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('')
             : `<option value="">No sectors found — create one first.</option>`;
@@ -730,6 +776,31 @@ function openModal(type, id = null) {
                 document.getElementById('news-body').value   = item.body || '';
                 document.getElementById('news-cat').value    = item.category_id || item.category?.id || '';
                 document.getElementById('news-date').value   = item.created_at ? toLocalDatetimeInput(item.created_at) : nowLocalDatetime();
+
+                const existingImages = (Array.isArray(item.images) && item.images.length)
+                    ? item.images
+                    : (item.image ? [item.image] : []);
+
+                if (existingImages.length) {
+                    imageGrid.innerHTML = existingImages.map((url, index) => `
+                        <div class="relative aspect-square overflow-hidden rounded-xl border-2 border-slate-100 bg-slate-50">
+                            <img src="${escHtml(url)}"
+                                 alt="Existing article image ${index + 1}"
+                                 class="w-full h-full object-cover">
+                            ${index === 0 ? `
+                                <span class="absolute left-1.5 top-1.5 rounded-md bg-brand/90 px-1.5 py-1 text-[8px] font-black uppercase text-white">
+                                    Cover
+                                </span>
+                            ` : ''}
+                            <button type="button" onclick="deleteExistingNewsImage(event, ${item.id}, ${index})"
+                                    class="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-lg"
+                                    aria-label="Delete existing image">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                    imagePreview.classList.remove('hidden');
+                }
             }
         } else {
             document.getElementById('news-id').value   = '';
@@ -749,6 +820,31 @@ function openModal(type, id = null) {
     const modal = document.getElementById(`modal-${type}`);
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+}
+
+async function deleteExistingNewsImage(event, newsId, imageIndex) {
+    event.preventDefault();
+    event.stopPropagation();
+    const item = state.news.find(article => article.id == newsId);
+    const images = (Array.isArray(item?.images) && item.images.length)
+        ? item.images
+        : (item?.image ? [item.image] : []);
+    const imageUrl = images[imageIndex];
+    if (!imageUrl || !confirm('Delete this image permanently?')) return;
+
+    showLoader('Deleting Image', 'Removing image from article...');
+    try {
+        const formData = new FormData();
+        formData.append('delete_image_url', imageUrl);
+        await apiCall(`/news/${newsId}`, 'POST', formData, true);
+        await loadContent('news');
+        openModal('news', newsId);
+        showToast('Image Deleted');
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        hideLoader();
+    }
 }
 
 function closeModals() {
@@ -777,32 +873,50 @@ async function handleSave(e, type) {
         }
 
         else if (type === 'news') {
-            const newsId   = document.getElementById('news-id').value;
-            const formData = new FormData();
-
-            formData.append('site_id',    currentSiteId);
-            formData.append('title',      document.getElementById('news-title').value);
-            formData.append('author',     document.getElementById('news-author').value);
-            formData.append('lede',       document.getElementById('news-lede').value);
-            formData.append('body',       document.getElementById('news-body').value);
-            formData.append('created_at', document.getElementById('news-date').value);
-
-            // Required for Laravel/PHP FormData PUT requests when updating
-            if (newsId) {
-                formData.append('_method', 'PUT');
+            let newsId = document.getElementById('news-id').value;
+            const images = document.getElementById('news-image').files;
+            const oversizedImage = Array.from(images).find(file => file.size > 15 * 1024 * 1024);
+            if (oversizedImage) {
+                throw new Error(`${oversizedImage.name} is larger than the 15 MB image limit`);
             }
 
-            const catSelect = document.getElementById('news-cat');
-            if (catSelect.selectedOptions.length) {
-                formData.append('category', catSelect.selectedOptions[0].text);
-                formData.append('category_id', catSelect.value);
+            const makeNewsForm = (image = null, preserveCover = false) => {
+                const formData = new FormData();
+                formData.append('site_id',    currentSiteId);
+                formData.append('title',      document.getElementById('news-title').value);
+                formData.append('author',     document.getElementById('news-author').value);
+                formData.append('lede',       document.getElementById('news-lede').value);
+                formData.append('body',       document.getElementById('news-body').value);
+                formData.append('created_at', document.getElementById('news-date').value);
+
+                const catSelect = document.getElementById('news-cat');
+                if (catSelect.selectedOptions.length) {
+                    formData.append('category', catSelect.selectedOptions[0].text);
+                    formData.append('category_id', catSelect.value);
+                }
+                if (image) formData.append('images[]', image);
+                if (preserveCover) formData.append('preserve_cover', '1');
+                return formData;
+            };
+
+            // Upload one image per request so several large images do not exceed
+            // the server's total POST-size limit.
+            if (!newsId) {
+                const result = await apiCall('/news', 'POST', makeNewsForm(images[0] || null), true);
+                newsId = result.id;
+
+                for (let i = 1; i < images.length; i++) {
+                    await apiCall(`/news/${newsId}`, 'POST', makeNewsForm(images[i], true), true);
+                }
+            } else {
+                if (images.length === 0) {
+                    await apiCall(`/news/${newsId}`, 'POST', makeNewsForm(), true);
+                } else {
+                    for (let i = 0; i < images.length; i++) {
+                        await apiCall(`/news/${newsId}`, 'POST', makeNewsForm(images[i], i > 0), true);
+                    }
+                }
             }
-
-            const img = document.getElementById('news-image').files[0];
-            if (img) formData.append('image', img);
-
-            const url = newsId ? `/news/${newsId}` : '/news';
-            await apiCall(url, 'POST', formData, true);
         }
 
         else if (type === 'categories') {
